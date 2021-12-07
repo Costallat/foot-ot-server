@@ -37,7 +37,7 @@
 #include "creatures/appearance/mounts/mounts.h"
 #include "creatures/appearance/outfit/outfit.h"
 #include "grouping/party.h"
-#include "server/network/protocol/protocolgame.h"
+#include "server/network/protocol/protocolgame10.h"
 #include "items/containers/rewards/reward.h"
 #include "items/containers/rewards/rewardchest.h"
 #include "map/town.h"
@@ -1003,6 +1003,11 @@ class Player final : public Creature, public Cylinder
 		void sendCreatureType(const Creature* creature, uint8_t creatureType) {
 			if (client) {
 				client->sendCreatureType(creature, creatureType);
+			}
+		}
+		void sendCreatureHelpers(uint32_t creatureId, uint16_t helpers) {
+			if (client) {
+				client->sendCreatureHelpers(creatureId, helpers);
 			}
 		}
 		void sendSpellCooldown(uint8_t spellId, uint32_t time) {

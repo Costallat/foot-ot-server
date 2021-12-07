@@ -351,7 +351,7 @@ void Game::onPressHotkeyEquip(uint32_t playerId, uint16_t spriteid)
 	if (!player) {
 		return;
 	}
-	
+
 	Item* item;
 	const ItemType& itemType = Item::items.getItemIdByClientId(spriteid);
 
@@ -3774,7 +3774,7 @@ void Game::playerStashWithdraw(uint32_t playerId, uint16_t spriteId, uint32_t co
 	if (!player) {
 		return;
 	}
-	
+
 	if (player->hasFlag(PlayerFlag_CannotPickupItem)) {
 		return;
 	}
@@ -6581,7 +6581,7 @@ void Game::checkImbuements()
 			it = imbuedItems[bucket].erase(it);
 			continue;
 		}
-		
+
 		const ItemType& itemType = Item::items[item->getID()];
 		if (!player->hasCondition(CONDITION_INFIGHT) && !itemType.isContainer()) {
 			it++;
@@ -6831,6 +6831,18 @@ void Game::updatePlayerShield(Player* player)
 	map.getSpectators(spectators, player->getPosition(), true, true);
 	for (Creature* spectator : spectators) {
 		spectator->getPlayer()->sendCreatureShield(player);
+	}
+}
+
+void Game::updatePlayerHelpers(const Player& player)
+{
+	uint32_t creatureId = player.getID();
+	uint16_t helpers = player.getHelpers();
+
+	SpectatorHashSet spectators;
+	map.getSpectators(spectators, player.getPosition(), true, true);
+	for (Creature* spectator : spectators) {
+		spectator->getPlayer()->sendCreatureHelpers(creatureId, helpers);
 	}
 }
 
