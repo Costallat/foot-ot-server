@@ -41,6 +41,9 @@ WORKDIR /canary
 
 RUN apt-get update && apt-get install -y --no-install-recommends libluajit-5.1-dev mariadb-client
 
+COPY docker/server/01-test_account.sql 01-test_account.sql
+COPY docker/server/02-test_account_players.sql 02-test_account_players.sql
+
 COPY docker/server/start.sh start.sh
 
 ENTRYPOINT ["/canary/start.sh"]
