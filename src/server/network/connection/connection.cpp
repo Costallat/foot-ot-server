@@ -23,7 +23,7 @@
 #include "server/network/connection/connection.h"
 #include "server/network/message/outputmessage.h"
 #include "server/network/protocol/protocol.h"
-#include "server/network/protocol/protocolgame.h"
+#include "server/network/protocol/protocolgame10.h"
 #include "game/scheduling/scheduler.h"
 #include "server/server.h"
 

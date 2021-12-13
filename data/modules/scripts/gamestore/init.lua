@@ -296,13 +296,13 @@ function parseRequestStoreOffers(playerId, msg)
 	elseif actionType == GameStore.ActionType.OPEN_PREMIUM_BOOST then
 		local subAction = msg:getByte()
 		local category = nil
-		
+
 		if subAction == 0 then
 			category = GameStore.getCategoryByName("Premium Time")
-		else 
+		else
 			category = GameStore.getCategoryByName("Boosts")
 		end
-		
+
 		if category then
 			addPlayerEvent(sendShowStoreOffers, 50, playerId, category)
 		end
@@ -315,17 +315,17 @@ function parseRequestStoreOffers(playerId, msg)
 		else
 			category = GameStore.getCategoryByName("Useful Things")
 		end
-		
+
 		-- Third prey slot offerId
 		-- We can't use offerId 0
-		if subAction == 0 then 
+		if subAction == 0 then
 			redirectId = 65008
 		end
 
 		if category then
 			addPlayerEvent(sendShowStoreOffers, 50, playerId, category, redirectId)
 		end
-	
+
 	elseif actionType == GameStore.ActionType.OPEN_OFFER then
 		local offerId = msg:getU32()
 		local category = GameStore.getCategoryByOffer(offerId)
@@ -423,7 +423,7 @@ function parseBuyStoreOffer(playerId, msg)
 		GameStore.insertHistory(player:getAccountId(), GameStore.HistoryTypes.HISTORY_TYPE_NONE, offer.name, (offerPrice) * -1)
 		local message = string.format("You have purchased %s for %d coins.", offer.name, offerPrice)
 		sendUpdateCoinBalance(playerId)
-		return addPlayerEvent(sendStorePurchaseSuccessful, 650, playerId, message)		
+		return addPlayerEvent(sendStorePurchaseSuccessful, 650, playerId, message)
 	end
 	return true
 end
@@ -465,6 +465,9 @@ function openStore(playerId)
 
 	local msg = NetworkMessage()
 	msg:addByte(GameStore.SendingPackets.S_OpenStore)
+	if player:getClient().version < 1200 then
+		msg:addByte(0x00)
+	end
 
 	local GameStoreCategories, GameStoreCount = nil, 0
 	if (player:getVocation():getId() == 0) then
@@ -477,13 +480,16 @@ function openStore(playerId)
 		msg:addU16(GameStoreCount)
 		for k, category in ipairs(GameStoreCategories) do
 			msg:addString(category.name)
+			if player:getClient().version < 1200 then
+				msg:addString(category.description)
+			end
 			msg:addByte(category.state or GameStore.States.STATE_NONE)
 			msg:addByte(#category.icons)
 			for m, icon in ipairs(category.icons) do
 				msg:addString(icon)
 			end
 
-			if category.parent then
+			if category.parent or player:getClient().version < 1200 then
 				msg:addString(category.parent)
 			else
 				msg:addU16(0)
@@ -664,11 +670,12 @@ function sendShowStoreOffers(playerId, category, redirectId)
 	msg:addByte(GameStore.SendingPackets.S_StoreOffers)
 	msg:addString(category.name)
 
-	msg:addU32(redirectId or 0)
-
-	msg:addByte(0) -- Window Type
-	msg:addByte(0) -- Collections Size
-	msg:addU16(0) -- Collection Name
+	if player:getClient().version > 1200 then
+		msg:addU32(redirectId or 0)
+		msg:addByte(0) -- Window Type
+		msg:addByte(0) -- Collections Size
+		msg:addU16(0) -- Collection Name
+	end
 
 	if not category.offers then
 		msg:addU16(0)
@@ -699,7 +706,7 @@ function sendShowStoreOffers(playerId, category, redirectId)
 		end
 		table.insert(offers[name].offers, offer)
 	end
-	
+
 	-- If player doesn't have hireling
 	if category.name == "Hirelings" then
 		if player:getHirelingsCount() < 1 then
@@ -712,101 +719,106 @@ function sendShowStoreOffers(playerId, category, redirectId)
 			count = count - 6
 		end
 	end
-	
+
 	msg:addU16(count)
 
 	if count > 0 then
 		for name, offer in pairs(offers) do
-			msg:addString(name)
-			msg:addByte(#offer.offers)
-			sendOfferDescription(player, offer.id and offer.id or 0xFFFF, offer.description)
+			if player:getClient().version > 1200 then
+				msg:addString(name)
+				msg:addByte(#offer.offers)
+				sendOfferDescription(player, offer.id and offer.id or 0xFFFF, offer.description)
+			end
 			for _, off in ipairs(offer.offers) do
 				xpBoostPrice = nil
 				if offer.type == GameStore.OfferTypes.OFFER_TYPE_EXPBOOST then
 					xpBoostPrice = GameStore.ExpBoostValues[player:getStorageValue(GameStore.Storages.expBoostCount)]
 				end
+				if player:getClient().version > 1200 then
+					msg:addU32(off.id)
+					msg:addU16(off.count)
+					msg:addU32(xpBoostPrice or off.price)
+					msg:addByte(off.coinType or 0x00)
 
-				msg:addU32(off.id)
-				msg:addU16(off.count)
-				msg:addU32(xpBoostPrice or off.price)
-				msg:addByte(off.coinType or 0x00)
+					local disabled, disabledReason = player:canBuyOffer(off).disabled, player:canBuyOffer(off).disabledReason
+					msg:addByte(disabled)
+					if disabled == 1 then
+						msg:addByte(0x01);
+						msg:addString(disabledReason)
+					end
 
-				local disabled, disabledReason = player:canBuyOffer(off).disabled, player:canBuyOffer(off).disabledReason
-				msg:addByte(disabled)
-				if disabled == 1 then
-					msg:addByte(0x01);
-					msg:addString(disabledReason)
-				end
-
-				if (off.state) then
-					if (off.state == GameStore.States.STATE_SALE) then
-						local daySub = off.validUntil - os.sdate("*t").day
-						if (daySub >= 0) then
-							msg:addByte(off.state)
-							msg:addU32(os.time() + daySub * 86400)
-							msg:addU32(off.basePrice)
-							haveSaleOffer = 1
+					if (off.state) then
+						if (off.state == GameStore.States.STATE_SALE) then
+							local daySub = off.validUntil - os.sdate("*t").day
+							if (daySub >= 0) then
+								msg:addByte(off.state)
+								msg:addU32(os.time() + daySub * 86400)
+								msg:addU32(off.basePrice)
+								haveSaleOffer = 1
+							else
+								msg:addByte(GameStore.States.STATE_NONE)
+							end
 						else
-							msg:addByte(GameStore.States.STATE_NONE)
+							msg:addByte(off.state)
 						end
 					else
-						msg:addByte(off.state)
+						msg:addByte(GameStore.States.STATE_NONE)
 					end
-				else
-					msg:addByte(GameStore.States.STATE_NONE)
 				end
 			end
-			
-			local tryOnType = 0
-			local type = convertType(offer.type)
-			
-			msg:addByte(type);
-			if type == GameStore.ConverType.SHOW_NONE then
-				msg:addString(offer.icons[1])
-			elseif type == GameStore.ConverType.SHOW_MOUNT then
-				local mount = Mount(offer.id)
-				msg:addU16(mount:getClientId())
 
-				tryOnType = 1
-			elseif type == GameStore.ConverType.SHOW_ITEM then
-				msg:addU16(ItemType(offer.itemtype):getClientId())
-			elseif type == GameStore.ConverType.SHOW_OUTFIT then
-				msg:addU16(player:getSex() == PLAYERSEX_FEMALE and offer.sexId.female or offer.sexId.male)
-				local outfit = player:getOutfit()
-				msg:addByte(outfit.lookHead)
-				msg:addByte(outfit.lookBody)
-				msg:addByte(outfit.lookLegs)
-				msg:addByte(outfit.lookFeet)
-				
-				tryOnType = 1
-			elseif type == GameStore.ConverType.SHOW_HIRELING then
-				if player:getSex() == PLAYERSEX_MALE then
+			if player:getClient().version >= 1200 then
+				local tryOnType = 0
+				local type = convertType(offer.type)
+
+				msg:addByte(type);
+				if type == GameStore.ConverType.SHOW_NONE then
+					msg:addString(offer.icons[1])
+				elseif type == GameStore.ConverType.SHOW_MOUNT then
+					local mount = Mount(offer.id)
+					msg:addU16(mount:getClientId())
+
+					tryOnType = 1
+				elseif type == GameStore.ConverType.SHOW_ITEM then
+					msg:addU16(ItemType(offer.itemtype):getClientId())
+				elseif type == GameStore.ConverType.SHOW_OUTFIT then
+					msg:addU16(player:getSex() == PLAYERSEX_FEMALE and offer.sexId.female or offer.sexId.male)
+					local outfit = player:getOutfit()
+					msg:addByte(outfit.lookHead)
+					msg:addByte(outfit.lookBody)
+					msg:addByte(outfit.lookLegs)
+					msg:addByte(outfit.lookFeet)
+
+					tryOnType = 1
+				elseif type == GameStore.ConverType.SHOW_HIRELING then
+					if player:getSex() == PLAYERSEX_MALE then
+						msg:addByte(1)
+					else
+						msg:addByte(2)
+					end
+					msg:addU16(offer.sexId.male)
+					msg:addU16(offer.sexId.female)
+					local outfit = player:getOutfit()
+					msg:addByte(outfit.lookHead)
+					msg:addByte(outfit.lookBody)
+					msg:addByte(outfit.lookLegs)
+					msg:addByte(outfit.lookFeet)
+				end
+
+				msg:addByte(tryOnType) -- TryOn Type
+				msg:addU16(0) -- Collection (to-do)
+				msg:addU16(0) -- Popularity Score (to-do)
+				msg:addU32(0) -- State New Until (timestamp)
+
+				local configure = useOfferConfigure(offer.type)
+				if configure == GameStore.ConfigureOffers.SHOW_CONFIGURE then
 					msg:addByte(1)
 				else
-					msg:addByte(2)
+					msg:addByte(0)
 				end
-				msg:addU16(offer.sexId.male)
-				msg:addU16(offer.sexId.female)
-				local outfit = player:getOutfit()
-				msg:addByte(outfit.lookHead)
-				msg:addByte(outfit.lookBody)
-				msg:addByte(outfit.lookLegs)
-				msg:addByte(outfit.lookFeet)
-			end
 
-			msg:addByte(tryOnType) -- TryOn Type
-			msg:addU16(0) -- Collection (to-do)
-			msg:addU16(0) -- Popularity Score (to-do)
-			msg:addU32(0) -- State New Until (timestamp)
-			
-			local configure = useOfferConfigure(offer.type)
-			if configure == GameStore.ConfigureOffers.SHOW_CONFIGURE then
-				msg:addByte(1)
-			else 
-				msg:addByte(0)
+				msg:addU16(0) -- Products Capacity (unnused)
 			end
-
-			msg:addU16(0) -- Products Capacity (unnused)
 		end
 	end
 
@@ -841,7 +853,9 @@ function sendStoreTransactionHistory(playerId, page, entriesPerPage)
 		msg:addU32(entry.time)
 		msg:addByte(entry.mode)
 		msg:addU32(entry.amount)
-    	msg:addByte(0x0) -- 0 = transferable tibia coin, 1 = normal tibia coin
+		if version > 1200 then
+			msg:addByte(0x0) -- 0 = transferable tibia coin, 1 = normal tibia coin
+		end
 		msg:addString(entry.description)
 		if version >= 1220 then
 			msg:addByte(0) -- details
@@ -860,6 +874,10 @@ function sendStorePurchaseSuccessful(playerId, message)
 	msg:addByte(GameStore.SendingPackets.S_CompletePurchase)
 	msg:addByte(0x00)
 	msg:addString(message)
+	if player:getClient().version < 1200 then
+		msg:addU32(player:getCoinsBalance())
+		msg:addU32(player:getCoinsBalance())
+	end
 
 	msg:sendToPlayer(player)
 end
@@ -910,8 +928,10 @@ function sendUpdateCoinBalance(playerId)
 
 	msg:addU32(player:getCoinsBalance())
 	msg:addU32(player:getCoinsBalance())
-	msg:addU32(player:getCoinsBalance())
-	msg:addU32(0) -- Tournament Coins
+	if player:getClient().version > 1200 then
+		msg:addU32(player:getCoinsBalance())
+		msg:addU32(0) -- Tournament Coins
+	end
 
 	msg:sendToPlayer(player)
 end
@@ -1048,7 +1068,7 @@ GameStore.insertHistory = function(accountId, mode, description, amount)
 	return db.query(string.format("INSERT INTO `store_history`(`account_id`, `mode`, `description`, `coin_amount`, `time`) VALUES (%s, %s, %s, %s, %s)", accountId, mode, db.escapeString(description), amount, os.time()))
 end
 
-GameStore.retrieveHistoryTotalPages = function (accountId) 
+GameStore.retrieveHistoryTotalPages = function (accountId)
 	local resultId = db.storeQuery("SELECT count(id) as total FROM store_history WHERE account_id = " .. accountId)
 	if resultId == false then
 		return 0
@@ -1442,8 +1462,8 @@ function GameStore.processNameChangePurchase(player, offerId, productType, newNa
 
 		player:removeCoinsBalance(offerPrice)
 		GameStore.insertHistory(player:getAccountId(), GameStore.HistoryTypes.HISTORY_TYPE_NONE, offerName, (offerPrice) * -1)
-		
-		local message = string.format("You have purchased %s for %d coins.", offerName, offerPrice) 
+
+		local message = string.format("You have purchased %s for %d coins.", offerName, offerPrice)
 		addPlayerEvent(sendStorePurchaseSuccessful, 500, playerId, message)
 
 		newName = newName:lower():gsub("(%l)(%w*)", function(a, b) return string.upper(a) .. b end)
@@ -1694,7 +1714,7 @@ function sendHomePage(playerId)
 
 	local homeOffers = getHomeOffers(player:getId())
 	msg:addU16(#homeOffers) -- offers
-	
+
 	for p, offer in pairs(homeOffers)do
 		msg:addString(offer.name)
 		msg:addByte(0x1) -- ?
@@ -1734,10 +1754,10 @@ function sendHomePage(playerId)
 		msg:addU16(0) -- Collection
 		msg:addU16(0) -- Popularity Score
 		msg:addU32(0) -- State New Until
-		msg:addByte(0) -- User Configuration 
+		msg:addByte(0) -- User Configuration
 		msg:addU16(0) -- Products Capacity
 	end
-	
+
 	local banner = HomeBanners
 	msg:addByte(#banner.images)
 	for m, image in ipairs(banner.images) do
