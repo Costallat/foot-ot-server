@@ -487,7 +487,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
   query << "SELECT `item_count`, `item_id`  FROM `player_stash` WHERE `player_id` = " << player->getGUID();
   if ((result = db.storeQuery(query.str()))) {
     do {
-      player->addItemOnStash(result->getNumber<uint16_t>("item_id"), result->getNumber<uint32_t>("item_count"));
+	  player->addItemOnStash(result->getNumber<uint16_t>("item_id"), result->getNumber<uint32_t>("item_count"));
     } while (result->next());
   }
 
@@ -525,13 +525,13 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 	propBestStream.init(Bestattr, attrBestSize);
 
 	for (int i = 0; i <= propBestStream.size(); i++) {
-     uint16_t raceid_t;
-     if (propBestStream.read<uint16_t>(raceid_t)) {
-      MonsterType* tmp_tt = g_monsters.getMonsterTypeByRaceId(raceid_t);
-      if (tmp_tt) {
-       player->addBestiaryTrackerList(tmp_tt);
-      }
-     }
+	 uint16_t raceid_t;
+	 if (propBestStream.read<uint16_t>(raceid_t)) {
+	  MonsterType* tmp_tt = g_monsters.getMonsterTypeByRaceId(raceid_t);
+	  if (tmp_tt) {
+	   player->addBestiaryTrackerList(tmp_tt);
+	  }
+	 }
 	}
 
   } else {
@@ -577,6 +577,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
       if (pid >= CONST_SLOT_FIRST && pid <= CONST_SLOT_LAST) {
         player->internalAddThing(pid, item);
+        item->startDecaying();
       } else {
         ItemMap::const_iterator it2 = itemMap.find(pid);
         if (it2 == itemMap.end()) {
@@ -586,6 +587,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
         Container* container = it2->second.first->getContainer();
         if (container) {
           container->internalAddThing(item);
+          item->startDecaying();
         }
       }
 
@@ -613,7 +615,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
   for (auto& it : openContainersList) {
     player->addContainer(it.first - 1, it.second);
-    player->onSendContainer(it.second);
+    g_scheduler.addEvent(createSchedulerTask(((it.first) * 50), std::bind(&Game::playerUpdateContainer, &g_game, player->getGUID(), it.first - 1)));
   }
 
   // Store Inbox
@@ -638,6 +640,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
         DepotChest* depotChest = player->getDepotChest(pid, true);
         if (depotChest) {
           depotChest->internalAddThing(item);
+          item->startDecaying();
         }
       } else {
         ItemMap::const_iterator it2 = itemMap.find(pid);
@@ -648,6 +651,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
         Container* container = it2->second.first->getContainer();
         if (container) {
           container->internalAddThing(item);
+          item->startDecaying();
         }
       }
     }
@@ -716,6 +720,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
       if (pid >= 0 && pid < 100) {
         player->getInbox()->internalAddThing(item);
+        item->startDecaying();
       } else {
         ItemMap::const_iterator it2 = itemMap.find(pid);
 
@@ -726,6 +731,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
         Container* container = it2->second.first->getContainer();
         if (container) {
           container->internalAddThing(item);
+          item->startDecaying();
         }
       }
     }
@@ -748,7 +754,6 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
       player->addVIPInternal(result->getNumber<uint32_t>("player_id"));
     } while (result->next());
   }
-
   loadPlayerPreyData(player);
   player->updateBaseSpeed();
   player->updateInventoryWeight();

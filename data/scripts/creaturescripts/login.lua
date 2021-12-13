@@ -16,6 +16,11 @@ function login.onLogin(player)
 	-- Stamina
 	nextUseStaminaTime[player.uid] = 0
 
+	-- Loot Channel
+	if player:getClient().version < 1200 then
+		player:openChannel(9)
+	end
+
 	-- Promotion
 	local vocation = player:getVocation()
 	local promotion = vocation:getPromotion()

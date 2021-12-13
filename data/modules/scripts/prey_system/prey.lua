@@ -194,7 +194,7 @@ function Player.setRandomBonusValue(self, slot, bonus, typeChange)
 	local starUP = math.random(1, 3)
 	local value = Prey.Bonuses[type][bonusValue]
 	local bonusGrade = self:getPreyBonusGrade(slot)
-	
+
 	if bonus then
 		if typeChange then
 			self:setPreyBonusGrade(slot, bonusValue)
@@ -304,7 +304,7 @@ function Player.getMonsterList(self)
 			end
 		end
 	end
-	
+
 	-- Insert the monstersId
 	for i = 1, #preyRaceIds do
 		table.insert(sortList, preyRaceIds[i])
@@ -316,7 +316,7 @@ function Player.getMonsterList(self)
 			table.insert(monsterList, v)
 		end
 	end
-	
+
 	return monsterList
 end
 
@@ -330,7 +330,7 @@ function Player.setAutomaticBonus(self, slot)
 		self:setPreyBonusRerolls(self:getPreyBonusRerolls() - 1)
 		self:sendTextMessage(MESSAGE_EVENT_ADVANCE, string.format("Your %s's prey bonus was automatically rolled.", monster:lower()))
 		self:setPreyTimeLeft(slot, Prey.Config.PreyTime)
-	
+
 	-- Lock Prey
 	elseif self:getPreyTick(slot) == 2 and self:getPreyBonusRerolls() >= 5 then
 		self:setPreyBonusRerolls(self:getPreyBonusRerolls() - 5)
@@ -340,8 +340,8 @@ function Player.setAutomaticBonus(self, slot)
 		self:sendTextMessage(MESSAGE_EVENT_ADVANCE, string.format("Your %s's prey has expired because you don't have enough prey wildcards.", monster:lower()))
 		self:setPreyCurrentMonster(slot, "")
 		self:setPreyTick(slot, 0)
-	end	
-end	
+	end
+end
 
 function onRecvbyte(player, msg, byte)
 	if (byte == Prey.C_Packets.RequestData) then
@@ -402,7 +402,7 @@ function Player.preyAction(self, msg)
 	elseif (action == Prey.Actions.SELECT_ALL_MONSTERS) then
 		local race = msg:getU16()
 		local race = getNameByRace(race)
-	
+
 		-- Converts RaceID to String
 		self:setPreyCurrentMonster(slot, race)
 
@@ -454,7 +454,7 @@ function Player.preyAction(self, msg)
 
 	-- Automatic Reroll/Lock
 	elseif (action == Prey.Actions.TICK_LOCK) then
-	
+
 		local button = msg:getByte()
 		if button == 1 then
 			self:setPreyTick(slot, 1)
@@ -623,27 +623,30 @@ function Player.sendPreyData(self, slot)
 
 		msg:addByte(slot) -- slot number
 		msg:addByte(slotState) -- slot state
-		
+
 		-- Check if has any bonus
 		if self:getPreyTimeLeft(slot) <= 0 then
 			self:setRandomBonusValue(slot, true, true)
 		end
-		
+
 		msg:addByte(self:getPreyBonusType(slot)) -- bonus type
 		msg:addU16(self:getPreyBonusValue(slot)) -- bonus value
 		msg:addByte(self:getPreyBonusGrade(slot)) -- bonus grade
 		msg:addU16(#raceList) -- monsters count
-		
+
 		for i = 1, #raceList do
 			msg:addU16(raceList[i]) -- raceID
 		end
 	end
 
 	-- Next free reroll
-	msg:addU32(self:getMinutesUntilFreeReroll(slot))
-
-	-- Automatic Reroll/Lock Prey
-	msg:addByte(tickState)
+	if self:getClient().version >= 1200 then
+		msg:addU32(self:getMinutesUntilFreeReroll(slot))
+		-- Automatic Reroll/Lock Prey
+		msg:addByte(tickState)
+	else
+		msg:addU16(self:getMinutesUntilFreeReroll(slot)/60)
+	end
 
 	-- send prey message
 	msg:sendToPlayer(self)
@@ -663,17 +666,19 @@ end
 
 function Player:sendPreyRerollPrice()
 	local msg = NetworkMessage()
-	
+
 	msg:addByte(Prey.S_Packets.PreyRerollPrice)
 	msg:addU32(self:getRerollPrice())
-	msg:addByte(Prey.Config.BonusRerollPrice) -- wildcards
-	msg:addByte(Prey.Config.SelectWithWildCardPrice) -- select directly
+	if self:getClient().version >= 1200 then
+		msg:addByte(Prey.Config.BonusRerollPrice) -- wildcards
+		msg:addByte(Prey.Config.SelectWithWildCardPrice) -- select directly
 
-	-- Feature unavailable
-	msg:addU32(0)
-	msg:addU32(0)
-	msg:addByte(0)
-	msg:addByte(0)
+		-- Feature unavailable
+		msg:addU32(0)
+		msg:addU32(0)
+		msg:addByte(0)
+		msg:addByte(0)
+	end
 
 	msg:sendToPlayer(self)
 end

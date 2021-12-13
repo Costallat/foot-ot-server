@@ -5706,7 +5706,7 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 				{
 					continue;
 				}
-				
+
 				if (tmpPlayer == attackerPlayer && attackerPlayer != targetPlayer) {
 					ss.str({});
 					ss << "You heal " << target->getNameDescription() << " for " << damageString;
@@ -6578,6 +6578,37 @@ void Game::checkImbuements()
 			continue;
 		}
 
+		const ItemType& itemType = Item::items[item->getID()];
+		if (!player->hasCondition(CONDITION_INFIGHT) && !itemType.isContainer()) {
+			it++;
+			continue;
+		}
+
+		bool hasImbue = false;
+		uint8_t slots = Item::items[item->getID()].imbuingSlots;
+		for (uint8_t slot = 0; slot < slots; slot++) {
+			uint32_t info = item->getImbuement(slot);
+			uint16_t id = info & 0xFF;
+			if (id == 0) {
+				continue;
+			}
+
+			int32_t duration = info >> 8;
+			int32_t newDuration = std::max(0, (duration - (EVENT_IMBUEMENTINTERVAL * EVENT_IMBUEMENT_BUCKETS) / 690));
+			if (newDuration > 0) {
+				hasImbue = true;
+			}
+
+			Imbuement* imbuement = g_imbuements->getImbuement(id);
+			if(!imbuement) {
+				continue;
+			}
+
+			Category* category = g_imbuements->getCategoryByID(imbuement->getCategory());
+			if (category->agressive && !player->hasCondition(CONDITION_INFIGHT)) {
+				continue;
+			}
+
 		player->updateInventoryImbuement();
 	}
 
@@ -6778,6 +6809,18 @@ void Game::updatePlayerShield(Player* player)
 	map.getSpectators(spectators, player->getPosition(), true, true);
 	for (Creature* spectator : spectators) {
 		spectator->getPlayer()->sendCreatureShield(player);
+	}
+}
+
+void Game::updatePlayerHelpers(const Player& player)
+{
+	uint32_t creatureId = player.getID();
+	uint16_t helpers = player.getHelpers();
+
+	SpectatorHashSet spectators;
+	map.getSpectators(spectators, player.getPosition(), true, true);
+	for (Creature* spectator : spectators) {
+		spectator->getPlayer()->sendCreatureHelpers(creatureId, helpers);
 	}
 }
 
