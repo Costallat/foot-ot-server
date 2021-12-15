@@ -83,7 +83,7 @@ sed -i "/mysqlPass = .*$/c\mysqlPass = \"$DB_PASSWORD\"" config.lua
 sed -i "/mysqlPort = .*$/c\mysqlPort = $DB_PORT" config.lua
 sed -i "/mysqlDatabase = .*$/c\mysqlDatabase = \"$DB_DATABASE\"" config.lua
 sed -i "/ip = .*$/c\ip = \"$OT_SERVER_IP\"" config.lua
-sed -i "/loginProtocolPort = .*$/c\loginProtocolPort = \"$OT_SERVER_LOGIN_PORT\"" config.lua
+sed -i "/loginProtocolPort = .*$/c\loginProtocolPort = $OT_SERVER_LOGIN_PORT" config.lua
 sed -i "/gameProtocolPort = .*$/c\gameProtocolPort = $OT_SERVER_GAME_PORT" config.lua
 sed -i "/statusProtocolPort = .*$/c\statusProtocolPort = $OT_SERVER_STATUS_PORT" config.lua
 
