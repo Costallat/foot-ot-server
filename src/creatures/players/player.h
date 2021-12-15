@@ -525,7 +525,7 @@ class Player final : public Creature, public Cylinder
 		bool isPremium() const;
 		void setPremiumDays(int32_t v);
 
-		void setTibiaCoins(int32_t v);
+		void setCoins(int32_t v);
 
 		uint16_t getHelpers() const;
 

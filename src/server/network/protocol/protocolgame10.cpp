@@ -4181,9 +4181,9 @@ void ProtocolGame::updateCoinBalance()
 			Player* threadPlayer = g_game.getPlayerByID(playerId);
 			if (threadPlayer) {
 				account::Account account;
-				account.LoadAccountDB(threadPlayer->getAccount());
+				account.loadAccountDB(threadPlayer->getAccount());
 				uint32_t coins;
-				account.GetCoins(&coins);
+				std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
 				threadPlayer->coinBalance = coins;
 				threadPlayer->sendCoinBalance();
 			}
