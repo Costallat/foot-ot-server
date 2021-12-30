@@ -22,7 +22,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           cppcheck --version
-          reviewdog -reporter=github-pr-review -runners=cppcheck
+          reviewdog -reporter=github-pr-check -runners=cppcheck
 
   cpplint:
     runs-on: ubuntu-latest
@@ -35,7 +35,7 @@ jobs:
         uses: reviewdog/action-cpplint@master
         with:
           github_token: ${{ secrets.github_token }}
-          reporter: github-pr-review
+          reporter: github-pr-check
           flags: --linelength=120
           filter: "-build/c++14\
             ,-build/include\
@@ -86,7 +86,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           luac -v
-          reviewdog -reporter=github-pr-review -runners=luac
+          reviewdog -reporter=github-pr-check -runners=luac
 
   luacheck:
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
         run: |
           luacheck --version
           cd $GITHUB_WORKSPACE
-          reviewdog -reporter=github-pr-review -runners=luacheck
+          reviewdog -reporter=github-pr-check -runners=luacheck
 
   shellcheck:
     runs-on: ubuntu-latest
@@ -120,7 +120,7 @@ jobs:
         uses: reviewdog/action-shellcheck@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
+          reporter: github-pr-check
           pattern: '*.sh'
           exclude: './.git/*'
 
@@ -143,7 +143,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           xmllint --version
-          reviewdog -reporter=github-pr-review -runners=xmllint
+          reviewdog -reporter=github-pr-check -runners=xmllint
 
   yamllint:
     runs-on: ubuntu-latest
@@ -156,10 +156,22 @@ jobs:
         uses: reviewdog/action-yamllint@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
+          reporter: github-pr-check
 
       - name: Run yamllint
         uses: reviewdog/action-yamllint@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-review
+          reporter: github-pr-check
+
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check out code
+        uses: actions/checkout@master
+
+      - name: hadolint
+        uses: reviewdog/action-hadolint@v1
+        with:
+          reporter: github-pr-check
