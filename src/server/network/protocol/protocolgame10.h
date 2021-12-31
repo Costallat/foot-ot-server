@@ -187,8 +187,11 @@ private:
 
 	// Imbuements
 	void parseApplyImbuement(NetworkMessage &msg);
-	void parseClearingImbuement(NetworkMessage &msg);
-	void parseCloseImbuingWindow(NetworkMessage &msg);
+	void parseClearImbuement(NetworkMessage &msg);
+	void parseCloseImbuementWindow(NetworkMessage &msg);
+	void openImbuementWindow(Item *item);
+	void sendImbuementResult(const std::string message);
+	void closeImbuementWindow();
 
 	void parseModalWindowAnswer(NetworkMessage &msg);
 

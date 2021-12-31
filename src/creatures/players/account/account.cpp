@@ -23,74 +23,96 @@
 #include "database/databasetasks.h"
 
 #include <algorithm>
-#include <limits>
+#include <climits>
+#include <utility>
+
 
 namespace account
 {
 
-Account::Account()
+Account::Account(const uint32_t& id)
 {
-    m_id = 0;
     m_email.clear();
-    m_password.clear();
-    m_premiumRemainingDays = 0;
-    m_premiumLastDay = 0;
-    m_coinBalance = 0;
-    m_tournamentCoinBalance = 0;
-    m_accountType = ACCOUNT_TYPE_NORMAL;
-    m_db = &Database::getInstance();
-    m_dbTasks = &g_databaseTasks;
+    m_account.id = id;
+    m_account.premiumRemainingDays = 0;
+    m_account.premiumLastDay = 0;
+    m_account.accountType = ACCOUNT_TYPE_NORMAL;
 }
 
-Account::Account(uint32_t id)
+Account::Account(std::string email)
+    : m_email(std::move(email))
 {
-    m_id = id;
-    m_email.clear();
-    m_password.clear();
-    m_premiumRemainingDays = 0;
-    m_premiumLastDay = 0;
-    m_coinBalance = 0;
-    m_tournamentCoinBalance = 0;
-    m_accountType = ACCOUNT_TYPE_NORMAL;
-    m_db = &Database::getInstance();
-    m_dbTasks = &g_databaseTasks;
-}
-
-Account::Account(const std::string& email)
-    : m_email(email)
-{
-    m_id = 0;
-    m_password.clear();
-    m_premiumRemainingDays = 0;
-    m_premiumLastDay = 0;
-    m_coinBalance = 0;
-    m_tournamentCoinBalance = 0;
-    m_accountType = ACCOUNT_TYPE_NORMAL;
-    m_db = &Database::getInstance();
-    m_dbTasks = &g_databaseTasks;
+    m_account.id = 0;
+    m_account.premiumRemainingDays = 0;
+    m_account.premiumLastDay = 0;
+    m_account.accountType = ACCOUNT_TYPE_NORMAL;
 }
 
 /*******************************************************************************
  * Interfaces
  ******************************************************************************/
 
-error_t Account::setDatabaseInterface(Database* database)
+error_t Account::setAccountStorageInterface(
+    AccountStorage* account_storage_interface)
 {
-    if (database == nullptr) {
+    if (account_storage_interface == nullptr) {
         return ERROR_NULLPTR;
     }
 
-    m_db = database;
+    m_storageInterface = account_storage_interface;
     return ERROR_NO;
 }
 
-error_t Account::setDatabaseTasksInterface(DatabaseTasks* dbTasks)
+/*******************************************************************************
+ * Account Load/Save
+ ******************************************************************************/
+
+error_t Account::loadAccount()
 {
-    if (dbTasks == nullptr) {
+    if (m_storageInterface == nullptr) {
         return ERROR_NULLPTR;
     }
 
-    m_dbTasks = dbTasks;
+    if ((m_account.id != 0 &&
+            m_storageInterface->loadAccountByID(m_account.id, m_account)) ||
+        (!m_email.empty() &&
+            m_storageInterface->loadAccountByEMail(m_email, m_account))) {
+        m_accLoaded = true;
+    } else {
+        m_accLoaded = false;
+        return ERROR_LOADING_ACCOUNT;
+    }
+
+    return ERROR_NO;
+}
+
+error_t Account::reLoadAccount()
+{
+    if (!m_accLoaded) {
+        return ERROR_NOT_INITIALIZED;
+    }
+
+    if (m_account.id != 0 &&
+            m_storageInterface->loadAccountByID(m_account.id, m_account)) {
+        m_accLoaded = true;
+    } else {
+        m_accLoaded = false;
+        return ERROR_LOADING_ACCOUNT;
+    }
+
+    return ERROR_NO;
+}
+
+error_t Account::saveAccount()
+{
+    if (!m_accLoaded) {
+        return ERROR_NOT_INITIALIZED;
+    }
+
+    if (!m_storageInterface->saveAccount(m_account)) {
+        return ERROR_STORAGE;
+    }
+
     return ERROR_NO;
 }
 
@@ -98,362 +120,95 @@ error_t Account::setDatabaseTasksInterface(DatabaseTasks* dbTasks)
  * Coins Methods
  ******************************************************************************/
 
-std::tuple<uint32_t, error_t> Account::getCoins(const CoinType &type)
+std::tuple<uint32_t, error_t> Account::getCoins(const CoinType& type) const
 {
-
-    if (m_db == nullptr || m_id == 0) {
+    if (!m_accLoaded) {
         return { 0, ERROR_NOT_INITIALIZED };
     }
 
-    std::ostringstream query;
-    query << "SELECT `coins` FROM `accounts` WHERE `id` = " << m_id;
-
-    DBResult_ptr result = m_db->storeQuery(query.str());
-    if (!result) {
-        return { 0, ERROR_DB };
+    uint32_t coins = 0;
+    if (!m_storageInterface->getCoins(m_account.id, type, coins)) {
+        return { 0, ERROR_STORAGE };
     }
 
-    return { result->getNumber<uint32_t>("coins"), ERROR_NO };
+    return { coins, ERROR_NO };
 }
 
-error_t Account::addCoins(const CoinType &type, const uint32_t& amount)
+error_t Account::addCoins(const CoinType& type, const uint32_t& amount)
 {
 
-    if (m_dbTasks == nullptr) {
-        return ERROR_NULLPTR;
+    if (!m_accLoaded) {
+        return ERROR_NOT_INITIALIZED;
     }
 
     if (amount == 0) {
         return ERROR_NO;
     }
 
-    int result = 0;
-    uint32_t current_coins = 0;
-
-    if (auto [current_coins, result] = this->getCoins(type); ERROR_NO == result) {
-        if ((current_coins + amount) < current_coins) {
-            return ERROR_VALUE_OVERFLOW;
-        }
-    } else {
-        return ERROR_GET_COINS;
+    if (!m_storageInterface->addCoins(m_account.id, type, amount)) {
+        return ERROR_STORAGE;
     }
 
-    std::ostringstream query;
-    query << "UPDATE `accounts` SET `coins` = " << (current_coins + amount)
-          << " WHERE `id` = " << m_id;
-
-    m_dbTasks->addTask(query.str());
-
-    this->registerCoinsTransaction(COIN_ADD, amount, COIN, "");
+    if (!m_storageInterface->registerCoinsTransaction(
+            m_account.id, COIN_ADD, amount, COIN, "ADD Coins")) {
+        SPDLOG_ERROR(
+            "Failed to register transaction: 'account:[{}], transaction "
+            "type:[{}], coins:[{}], coin type:[{}], description:[ADD Coins]",
+            m_account.id, COIN_ADD, amount, COIN);
+    }
 
     return ERROR_NO;
 }
 
-error_t Account::removeCoins(const CoinType &type, const uint32_t& amount)
+error_t Account::removeCoins(const CoinType& type, const uint32_t& amount)
 {
-
-    if (m_dbTasks == nullptr) {
-        return ERROR_NULLPTR;
+    if (!m_accLoaded) {
+        return ERROR_NOT_INITIALIZED;
     }
 
     if (amount == 0) {
         return ERROR_NO;
     }
 
-    int result = 0;
-    uint32_t current_coins = 0;
-
-    if (auto [current_coins, result] = this->getCoins(type); ERROR_NO == result) {
-        if ((current_coins - amount) > current_coins) {
-            return ERROR_VALUE_NOT_ENOUGH_COINS;
-        }
-    } else {
-        return ERROR_GET_COINS;
+    if (!m_storageInterface->removeCoins(m_account.id, type, amount)) {
+        return ERROR_STORAGE;
     }
 
-    std::ostringstream query;
-    query << "UPDATE `accounts` SET `coins` = " << (current_coins - amount)
-          << " WHERE `id` = " << m_id;
-
-    m_dbTasks->addTask(query.str());
-
-    this->registerCoinsTransaction(COIN_REMOVE, amount, COIN, "");
-
-    return ERROR_NO;
-}
-
-// std::tuple<uint32_t, error_t> Account::getTournamentCoins()
-// {
-
-//     if (m_db == nullptr || m_id == 0) {
-//         return { 0, ERROR_NOT_INITIALIZED };
-//     }
-
-//     std::ostringstream query;
-//     query << "SELECT `tournament_coins` FROM `accounts` WHERE `id` = " << m_id;
-
-//     DBResult_ptr result = m_db->storeQuery(query.str());
-//     if (!result) {
-//         return { 0, ERROR_DB };
-//     }
-
-//     return { result->getNumber<uint32_t>("tournament_coins"), ERROR_NO };
-// }
-
-// error_t Account::addTournamentCoins(const uint32_t& amount)
-// {
-
-//     if (m_dbTasks == nullptr) {
-//         return ERROR_NULLPTR;
-//     }
-//     if (amount == 0) {
-//         return ERROR_NO;
-//     }
-
-//     int result = 0;
-//     uint32_t current_tournament_coins = 0;
-
-//     if (auto [current_tournament_coins, result] = this->getTournamentCoins();
-//         ERROR_NO == result) {
-//         if ((current_tournament_coins + amount) < current_tournament_coins) {
-//             return ERROR_VALUE_OVERFLOW;
-//         }
-//     } else {
-//         return ERROR_GET_COINS;
-//     }
-
-//     std::ostringstream query;
-//     query << "UPDATE `accounts` SET `tournament_coins` = "
-//           << (current_tournament_coins + amount) << " WHERE `id` = " << m_id;
-
-//     m_dbTasks->addTask(query.str());
-
-//     this->registerCoinsTransaction(COIN_ADD, amount, TOURNAMENT, "");
-
-//     return ERROR_NO;
-// }
-
-// error_t Account::removeTournamentCoins(const uint32_t& amount)
-// {
-
-//     if (m_dbTasks == nullptr) {
-//         return ERROR_NULLPTR;
-//     }
-
-//     if (amount == 0) {
-//         return ERROR_NO;
-//     }
-
-//     int result = 0;
-//     uint32_t current_tournament_coins = 0;
-
-//     if (auto [current_tournament_coins, result] = this->getTournamentCoins();
-//         ERROR_NO == result) {
-//         if ((current_tournament_coins - amount) > current_tournament_coins) {
-//             return ERROR_VALUE_NOT_ENOUGH_COINS;
-//         }
-//     } else {
-//         return ERROR_GET_COINS;
-//     }
-
-//     std::ostringstream query;
-//     query << "UPDATE `accounts` SET `tournament_coins` = "
-//           << (current_tournament_coins - amount) << " WHERE `id` = " << m_id;
-
-//     m_dbTasks->addTask(query.str());
-
-//     this->registerCoinsTransaction(COIN_REMOVE, amount, TOURNAMENT, "");
-
-//     return ERROR_NO;
-// }
-
-error_t Account::registerCoinsTransaction(CoinTransactionType type,
-    uint32_t coins, CoinType coinType, const std::string& description)
-{
-
-    if (m_db == nullptr) {
-        return ERROR_NULLPTR;
-    }
-
-    std::ostringstream query;
-    query << "INSERT INTO `coins_transactions` (`account_id`, `type`, `amount`,"
-             " `coin_type`, `description`) VALUES ("
-          << m_id << ", " << static_cast<uint16_t>(type) << ", " << coins
-          << ", " << static_cast<uint16_t>(coinType) << ", "
-          << m_db->escapeString(description) << ")";
-
-    if (!m_db->executeQuery(query.str())) {
-        return ERROR_DB;
+    if (!m_storageInterface->registerCoinsTransaction(m_account.id, COIN_REMOVE,
+            amount, CoinType::COIN, "REMOVE Coins")) {
+        SPDLOG_ERROR(
+            "Failed to register transaction: 'account:[{}], transaction "
+            "type:[{}], coins:[{}], coin type:[{}], description:[REMOVE Coins]",
+            m_account.id, COIN_REMOVE, amount, COIN);
     }
 
     return ERROR_NO;
 }
 
-/*******************************************************************************
- * Database
- ******************************************************************************/
-
-error_t Account::loadAccountDB()
+std::string Account::getPassword()
 {
-    if (m_id != 0) {
-        return this->loadAccountDB(m_id);
-    } else if (!m_email.empty()) {
-        return this->loadAccountDB(m_email);
+    if (!m_accLoaded) {
+        return { 0, ERROR_NOT_INITIALIZED };
     }
 
-    return ERROR_NOT_INITIALIZED;
+    std::string password;
+    if (!m_storageInterface->getPassword(m_account.id, password)) {
+        SPDLOG_ERROR("Failed to get account password: [{}]", m_account.id);
+        password.clear();
+        return password;
+    }
+
+    return password;
 }
 
-error_t Account::loadAccountDB(const std::string email)
-{
-    std::ostringstream query;
-    query << "SELECT * FROM `accounts` WHERE `email` = "
-          << m_db->escapeString(email);
-    return this->loadAccountDB(query);
-}
-
-error_t Account::loadAccountDB(uint32_t id)
-{
-    std::ostringstream query;
-    query << "SELECT * FROM `accounts` WHERE `id` = " << id;
-    return this->loadAccountDB(query);
-}
-
-error_t Account::loadAccountDB(const std::ostringstream& query)
-{
-    if (m_db == nullptr) {
-        return ERROR_NULLPTR;
-    }
-
-    DBResult_ptr result = m_db->storeQuery(query.str());
-    if (!result) {
-        return false;
-    }
-
-    this->setID(result->getNumber<uint32_t>("id"));
-    this->setEmail(result->getString("email"));
-    this->setAccountType(
-        static_cast<AccountType>(result->getNumber<int32_t>("type")));
-    this->setPassword(result->getString("password"));
-    this->setPremiumRemaningDays(result->getNumber<uint16_t>("premdays"));
-    this->setPremiumLastDay(result->getNumber<time_t>("lastday"));
-
-    return ERROR_NO;
-}
-
-std::tuple<Player, error_t> Account::loadAccountPlayerDB(
-    const std::string& characterName)
-{
-
-    Player player;
-
-    if (m_id == 0) {
-        return { player, ERROR_NOT_INITIALIZED };
-    }
-
-    std::ostringstream query;
-    query << "SELECT `name`, `deletion` FROM `players` WHERE `account_id` = "
-          << m_id << " AND `name` = " << m_db->escapeString(characterName)
-          << " ORDER BY `name` ASC";
-
-    DBResult_ptr result = m_db->storeQuery(query.str());
-    if (!result || result->getNumber<uint64_t>("deletion") != 0) {
-        return { player, ERROR_PLAYER_NOT_FOUND };
-    }
-
-    player.name = result->getString("name");
-    player.deletion = result->getNumber<uint64_t>("deletion");
-
-    return { player, ERROR_NO };
-}
-
-std::tuple<std::vector<Player>, error_t> Account::loadAccountPlayersDB()
-{
-
-    std::vector<Player> players;
-
-    if (m_id == 0) {
-        return { players, ERROR_NOT_INITIALIZED };
-    }
-
-    std::ostringstream query;
-    query << "SELECT `name`, `deletion` FROM `players` WHERE `account_id` = "
-          << m_id << " ORDER BY `name` ASC";
-
-    DBResult_ptr result = m_db->storeQuery(query.str());
-    if (!result) {
-        return { players, ERROR_DB };
-    }
-
-    do {
-        if (result->getNumber<uint64_t>("deletion") == 0) {
-            Player new_player;
-            new_player.name = result->getString("name");
-            new_player.deletion = result->getNumber<uint64_t>("deletion");
-            players.push_back(new_player);
-        }
-    } while (result->next());
-    return { players, ERROR_NO };
-}
-
-error_t Account::saveAccountDB()
-{
-    std::ostringstream query;
-
-    query << "UPDATE `accounts` SET "
-          << "`email` = " << m_db->escapeString(m_email) << " , "
-          << "`type` = " << m_accountType << " , "
-          << "`coins` = " << m_coinBalance << " , "
-          << "`premdays` = " << m_premiumRemainingDays << " , "
-          << "`lastday` = " << m_premiumLastDay;
-
-    if (m_id != 0) {
-        query << " WHERE `id` = " << m_id;
-    } else if (!m_email.empty()) {
-        query << " WHERE `email` = " << m_email;
-    }
-
-    if (!m_db->executeQuery(query.str())) {
-        return ERROR_DB;
-    }
-
-    return ERROR_NO;
-}
 
 /*******************************************************************************
  * Setters and Getters
  ******************************************************************************/
 
-error_t Account::setID(const uint32_t& id)
+error_t Account::setPremiumRemainingDays(const uint32_t& days)
 {
-    if (id == 0) {
-        return ERROR_INVALID_ID;
-    }
-    m_id = id;
-    return ERROR_NO;
-}
-
-error_t Account::setEmail(const std::string& email)
-{
-    if (email.empty()) {
-        return ERROR_INVALID_ACCOUNT_EMAIL;
-    }
-    m_email = email;
-    return ERROR_NO;
-}
-
-error_t Account::setPassword(const std::string& password)
-{
-    if (password.empty()) {
-        return ERROR_INVALID_ACC_PASSWORD;
-    }
-    m_password = password;
-    return ERROR_NO;
-}
-
-error_t Account::setPremiumRemaningDays(const uint32_t& days)
-{
-    m_premiumRemainingDays = days;
+    m_account.premiumRemainingDays = days;
     return ERROR_NO;
 }
 
@@ -462,43 +217,23 @@ error_t Account::setPremiumLastDay(const time_t& lastDay)
     if (lastDay < 0) {
         return ERROR_INVALID_LAST_DAY;
     }
-    m_premiumLastDay = lastDay;
+    m_account.premiumLastDay = lastDay;
     return ERROR_NO;
 }
 
-error_t Account::setAccountType(const AccountType& account_type)
+error_t Account::setAccountType(const AccountType& accountType)
 {
-    if (account_type > 5) {
-        return ERROR_INVALID_ACC_TYPE;
-    }
-    m_accountType = account_type;
+    m_account.accountType = accountType;
     return ERROR_NO;
 }
 
-std::tuple<Player, error_t> Account::getAccountPlayer(
-    const std::string& characterName)
+std::tuple<std::map<std::string, uint64_t>, error_t>
+Account::getAccountPlayers()
 {
-
-    Player player;
-    int result = 0;
-    if (auto [player, result] = this->loadAccountPlayerDB(characterName);
-        ERROR_NO == result) {
-        return { player, ERROR_NO };
+    if (!m_accLoaded) {
+        return { m_account.players, ERROR_NOT_INITIALIZED };
     }
-
-    return { player, result };
-}
-
-std::tuple<std::vector<Player>, error_t> Account::getAccountPlayers()
-{
-    std::vector<Player> players;
-    int result = 0;
-    if (auto [players, result] = this->loadAccountPlayersDB();
-        ERROR_NO == result) {
-        return { players, ERROR_NO };
-    } else {
-        return { players, result };
-    }
+    return { m_account.players, ERROR_NO };
 }
 
 } // namespace account

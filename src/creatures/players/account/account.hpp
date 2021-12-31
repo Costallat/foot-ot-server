@@ -17,239 +17,157 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_HPP_
-#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_HPP_
+#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_HPP
+#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_HPP
 
-#include <limits.h>
+#include <climits>
 #include <string>
 #include <vector>
 
+#include "creatures/players/account/account_defines.hpp"
 #include "creatures/players/account/account_storage.hpp"
 #include "database/database.h"
 #include "database/databasetasks.h"
 #include "utils/definitions.h"
 
-namespace account {
-
-enum Errors : uint8_t {
-  ERROR_NO = 0,
-  ERROR_DB,
-  ERROR_GET_COINS,
-  ERROR_INVALID_ACCOUNT_EMAIL,
-  ERROR_INVALID_ACC_PASSWORD,
-  ERROR_INVALID_ACC_TYPE,
-  ERROR_INVALID_ID,
-  ERROR_INVALID_LAST_DAY,
-  ERROR_LOADING_ACCOUNT_PLAYERS,
-  ERROR_NOT_INITIALIZED,
-  ERROR_NULLPTR,
-  ERROR_VALUE_NOT_ENOUGH_COINS,
-  ERROR_VALUE_OVERFLOW,
-  ERROR_PLAYER_NOT_FOUND
-};
-
-enum AccountType : uint8_t {
-  ACCOUNT_TYPE_NORMAL = 1,
-  ACCOUNT_TYPE_TUTOR = 2,
-  ACCOUNT_TYPE_SENIORTUTOR = 3,
-  ACCOUNT_TYPE_GAMEMASTER = 4,
-  ACCOUNT_TYPE_GOD = 5
-};
-
-enum GroupType : uint8_t {
-  GROUP_TYPE_NORMAL = 1,
-  GROUP_TYPE_TUTOR = 2,
-  GROUP_TYPE_SENIORTUTOR = 3,
-  GROUP_TYPE_GAMEMASTER = 4,
-  GROUP_TYPE_COMMUNITYMANAGER = 5,
-  GROUP_TYPE_GOD = 6
-};
-
-enum CoinTransactionType : uint8_t { COIN_ADD = 1, COIN_REMOVE = 2 };
-
-enum CoinType : uint8_t { COIN = 1, TOURNAMENT = 2 };
-
-typedef struct {
-  std::string name;
-  uint64_t deletion;
-} Player;
+namespace account
+{
 
 /**
  * @brief Account class to handle account information
  *
  */
-class Account {
+class Account
+{
 public:
-  /**
-   * @brief Construct a new Account object
-   *
-   */
-  Account();
+    /**
+     * @brief Construct a new Account object
+     *
+     * @param id Account ID
+     */
+    explicit Account(const uint32_t& id);
 
-  /**
-   * @brief Construct a new Account object
-   *
-   * @param id Set Account ID to be used by loadAccountDB
-   */
-  explicit Account(uint32_t id);
+    /**
+     * @brief Construct a new Account object
+     *
+     * @param name Account Name/E-Mail
+     */
+    explicit Account(std::string email);
 
-  /**
-   * @brief Construct a new Account object
-   *
-   * @param name Set Account Name to be used by loadAccountDB
-   */
-  explicit Account(const std::string &name);
+    /***************************************************************************
+     * Interfaces
+     **************************************************************************/
 
-  /***************************************************************************
-   * Interfaces
-   **************************************************************************/
+    /**
+     * @brief Set the Storage Interface used to get and set persisted
+     * information.
+     *
+     * @param account_storage_interface Pointer to storage interface
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t setAccountStorageInterface(
+        AccountStorage* account_storage_interface);
 
-  error_t setAccountStorageInterface(account_storage::AccountStorage *account_storage_interface);
+    /***************************************************************************
+     * Coins Methods
+     **************************************************************************/
+
+    /** Coins
+     * @brief Get the amount of coins that the account has from database.
+     *
+     * @param type Type of the coin
+     *
+     * @return uint32_t Number of coins
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    std::tuple<uint32_t, error_t> getCoins(const CoinType& type) const;
+
+    /**
+     * @brief Add coins to the account.
+     *
+     * @param type Type of the coin
+     * @param amount Amount of coins to be added
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t addCoins(const CoinType& type, const uint32_t& amount);
+
+    /**
+     * @brief Removes coins from the account.
+     *
+     * @param type Type of the coin
+     * @param amount Amount of coins to be removed
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t removeCoins(const CoinType& type, const uint32_t& amount);
+
+    /***************************************************************************
+     * Account Load/Save
+     **************************************************************************/
+
+    /**
+     * @brief Save Account.
+     *
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t saveAccount();
+
+    /**
+     * @brief Load Account Information.
+     *
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t loadAccount();
+
+    /**
+     * @brief Re-Load Account Information to get update information(mainly the
+     * players list).
+     *
+     * @return error_t ERROR_NO(0) Success, otherwise Fail.
+     */
+    error_t reLoadAccount();
 
 
-  /**
-   * @brief Set the Database Interface used to get and set information from
-   * the database
-   *
-   * @param database Database Interface pointer to be used
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t setDatabaseInterface(Database *database);
+    /***************************************************************************
+     * Setters and Getters
+     **************************************************************************/
 
-  /**
-   * @brief Set the Database Tasks Interface used to schedule db update
-   *
-   * @param database Database Interface pointer to be used
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t setDatabaseTasksInterface(DatabaseTasks *dbTasks);
+    inline uint32_t getID() const
+    {
+        return m_account.id;
+    };
 
-  /***************************************************************************
-   * Coins Methods
-   **************************************************************************/
+    inline std::string getEmail()
+    {
+        return m_email;
+    }
 
-  /** Coins
-   * @brief Get the amount of coins that the account has from database.
-   *
-   * @param type Type of the coin
-   *
-   * @return uint32_t Number of coins
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  std::tuple<uint32_t, error_t> getCoins(const CoinType &type);
+    std::string getPassword();
 
-  /**
-   * @brief Add coins to the account and update database.
-   *
-   * @param type Type of the coin
-   * @param amount Amount of coins to be added
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t addCoins(const CoinType &type, const uint32_t &amount);
+    error_t setPremiumRemainingDays(const uint32_t& days);
+    inline uint32_t getPremiumRemainingDays() const
+    {
+        return m_account.premiumRemainingDays;
+    }
 
-  /**
-   * @brief Removes coins from the account and update database.
-   *
-   * @param type Type of the coin
-   * @param amount Amount of coins to be removed
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t removeCoins(const CoinType &type, const uint32_t &amount);
+    error_t setPremiumLastDay(const time_t& lastDay);
+    inline time_t getPremiumLastDay() const
+    {
+        return m_account.premiumLastDay;
+    }
 
-  /***************************************************************************
-   * Database
-   **************************************************************************/
+    error_t setAccountType(const AccountType& accountType);
+    inline AccountType getAccountType() const
+    {
+        return m_account.accountType;
+    }
 
-  /**
-   * @brief Try to load account from DB using Account ID or Name if they were
-   * initialized.
-   *
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t loadAccountDB();
-
-  /**
-   * @brief Try to load account from DB using Account Name
-   *
-   * @param name
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t loadAccountDB(std::string name);
-
-  /**
-   * @brief Try to load account from DB using Account ID
-   *
-   * @param id Account ID
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t loadAccountDB(uint32_t id);
-
-  /**
-   * @brief Save Account to DB
-   *
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t saveAccountDB();
-
-  /***************************************************************************
-   * Setters and Getters
-   **************************************************************************/
-
-  inline uint32_t getID() { return m_id; };
-
-  error_t setEmail(const std::string &name);
-  inline std::string getEmail() { return m_email; }
-
-  error_t setPassword(const std::string &password);
-  inline std::string getPassword() { return m_password; }
-
-  error_t setPremiumRemaningDays(const uint32_t &days);
-  inline uint32_t getPremiumRemaningDays() { return m_premiumRemainingDays; }
-
-  error_t setPremiumLastDay(const time_t &lastDay);
-  inline time_t getPremiumLastDay() { return m_premiumLastDay; }
-
-  error_t setAccountType(const AccountType &accountType);
-  inline AccountType getAccountType() { return m_accountType; }
-
-  std::tuple<Player, error_t>
-  getAccountPlayer(const std::string &characterName);
-  std::tuple<std::vector<Player>, error_t> getAccountPlayers();
+    std::tuple<std::map<std::string, uint64_t>, error_t> getAccountPlayers();
 
 private:
-  error_t setID(const uint32_t &id);
-  error_t loadAccountDB(const std::ostringstream &query);
-  std::tuple<Player, error_t>
-  loadAccountPlayerDB(const std::string &characterName);
-  std::tuple<std::vector<Player>, error_t> loadAccountPlayersDB();
-
-  /**
-   * @brief Register account coins transactions in database.
-   *
-   * @param type Type of the transaction(Add/Remove).
-   * @param coins Amount of coins
-   * @param coin_type Type of the coin
-   * @param description Description of the transaction
-   *
-   * @return error_t ERROR_NO(0) Success, otherwise Fail.
-   */
-  error_t registerCoinsTransaction(CoinTransactionType type, uint32_t coins,
-                                   CoinType coinType,
-                                   const std::string &description);
-
-  Database *m_db;
-  DatabaseTasks *m_dbTasks;
-
-  account_storage::AccountStorage *m_accStorInterface;
-
-  uint32_t m_id;
-  std::string m_email;
-  std::string m_password;
-  uint32_t m_premiumRemainingDays;
-  time_t m_premiumLastDay;
-  uint32_t m_coinBalance;
-  uint32_t m_tournamentCoinBalance;
-  AccountType m_accountType;
+    AccountStorage* m_storageInterface = nullptr;
+    std::string m_email;
+    AccountInfo m_account;
+    bool m_accLoaded = false;
 };
 
 } // namespace account

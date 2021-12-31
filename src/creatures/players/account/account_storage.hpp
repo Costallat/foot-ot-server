@@ -17,13 +17,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP_
-#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP_
+#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
+#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
 
+#include "creatures/players/account/account_defines.hpp"
 #include <vector>
 
 
-namespace account_storage
+namespace account
 {
 
 /**
@@ -33,22 +34,34 @@ namespace account_storage
 class AccountStorage
 {
 public:
+    /***************************************************************************
+     * Account Load/Save
+     **************************************************************************/
+    virtual bool loadAccountByID(const uint32_t& id, AccountInfo& acc) = 0;
+    virtual bool loadAccountByEMail(
+        const std::string& name, AccountInfo& acc) = 0;
 
-    virtual error_t loadAccountByID() = 0;
-    virtual error_t loadAccountByName() = 0;
+    virtual bool saveAccount(const AccountInfo& accInfo) = 0;
 
-    virtual error_t saveAccount() = 0;
+    /***************************************************************************
+     * Gets Methods
+     **************************************************************************/
+    virtual bool getPassword(const uint32_t& id, std::string& password) = 0;
 
-    virtual error_t loadAccountPlayerDB() = 0;
-    virtual error_t loadAccountPlayersDB() =  0;
-
-
-    virtual error_t getCoins() = 0;
-    virtual error_t addCoins(const uint32_t& amount) = 0;
-    virtual error_t removeCoins(const uint32_t& amount) = 0;
-    virtual error_t registerCoinsTransaction() = 0;
+    /***************************************************************************
+     * Coins Methods
+     **************************************************************************/
+    virtual bool getCoins(
+        const uint32_t& id, const CoinType& type, uint32_t& coins) = 0;
+    virtual bool addCoins(
+        const uint32_t& id, const CoinType& type, const uint32_t& amount) = 0;
+    virtual bool removeCoins(
+        const uint32_t& id, const CoinType& type, const uint32_t& amount) = 0;
+    virtual bool registerCoinsTransaction(const uint32_t& id,
+        CoinTransactionType type, uint32_t coins, const CoinType& coinType,
+        const std::string& description) = 0;
 };
 
-} // namespace account_storage
+} // namespace account
 
-#endif // SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP_
+#endif // SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
