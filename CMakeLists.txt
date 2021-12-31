@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 # CMAKE
-# apt install build-essential git
+# apt install build-essential git libssl-dev
 # git clone https://github.com/Kitware/CMake/; cd CMake
 # ./bootstrap && make && sudo make install
 
