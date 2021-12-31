@@ -2314,7 +2314,7 @@ int PlayerFunctions::luaPlayerGetTibiaCoins(lua_State* L) {
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
 	account::Account account(player->getAccount());
-	account.loadAccountDB();
+	account.loadAccount();
 	uint32_t coins;
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
 	lua_pushnumber(L, coins);
@@ -2335,7 +2335,7 @@ int PlayerFunctions::luaPlayerAddTibiaCoins(lua_State* L) {
   uint32_t coins = getNumber<uint32_t>(L, 2);
 
   account::Account account(player->getAccount());
-  account.loadAccountDB();
+  account.loadAccount();
   if(account.addCoins(account::CoinType::COIN, coins)) {
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
 	pushBoolean(L, true);
@@ -2357,7 +2357,7 @@ int PlayerFunctions::luaPlayerRemoveTibiaCoins(lua_State* L) {
   uint32_t coins = getNumber<uint32_t>(L, 2);
 
   account::Account account(player->getAccount());
-  account.loadAccountDB();
+  account.loadAccount();
   if (account.removeCoins(account::CoinType::COIN, coins)) {
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
 	pushBoolean(L, true);
