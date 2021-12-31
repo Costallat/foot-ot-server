@@ -74,7 +74,7 @@ using AccountInfo = struct AccountInfo{
     std::map<std::string, uint64_t> players;
 
 #if defined(_MSC_VER)
-} __declspec((aligned(128)));
+};
 #endif
 
 #if defined(__GNUC__)
