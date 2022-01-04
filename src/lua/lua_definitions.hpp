@@ -22,6 +22,8 @@
 
 #include "game/movement/position.h"
 
+#include <list>
+
 // Enums
 enum {
 	EVENT_ID_LOADING = 1,

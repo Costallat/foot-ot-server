@@ -93,7 +93,7 @@ error_t Account::reLoadAccount()
     }
 
     if (m_account.id != 0 &&
-            m_storageInterface->loadAccountByID(m_account.id, m_account)) {
+        m_storageInterface->loadAccountByID(m_account.id, m_account)) {
         m_accLoaded = true;
     } else {
         m_accLoaded = false;
@@ -145,7 +145,15 @@ error_t Account::addCoins(const CoinType& type, const uint32_t& amount)
         return ERROR_NO;
     }
 
-    if (!m_storageInterface->addCoins(m_account.id, type, amount)) {
+    uint32_t coins = 0;
+    error_t result = ERROR_NO;
+    std::tie(coins, result) = this->getCoins(type);
+    if (ERROR_NO != result) {
+        return result;
+    }
+
+    coins = coins + amount;
+    if (!m_storageInterface->setCoins(m_account.id, type, coins)) {
         return ERROR_STORAGE;
     }
 
@@ -170,7 +178,21 @@ error_t Account::removeCoins(const CoinType& type, const uint32_t& amount)
         return ERROR_NO;
     }
 
-    if (!m_storageInterface->removeCoins(m_account.id, type, amount)) {
+    uint32_t coins = 0;
+    error_t result = ERROR_NO;
+    std::tie(coins, result) = this->getCoins(type);
+    if (ERROR_NO != result) {
+        return result;
+    }
+
+    if (coins < amount) {
+        SPDLOG_INFO("Account doesn't have enough coins! current[{}], use:[{}]",
+            coins, amount);
+        return ERROR_REMOVE_COINS;
+    }
+
+    coins = coins - amount;
+    if (!m_storageInterface->setCoins(m_account.id, type, coins)) {
         return ERROR_STORAGE;
     }
 
