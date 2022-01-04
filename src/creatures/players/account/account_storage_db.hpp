@@ -17,11 +17,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
-#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
+#ifndef SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_DB_HPP
+#define SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_DB_HPP
+
+#include <vector>
 
 #include "creatures/players/account/account_defines.hpp"
-#include <vector>
+#include "creatures/players/account/account_storage.hpp"
+#include "database/database.h"
+#include "database/databasetasks.h"
+#include "utils/definitions.h"
 
 
 namespace account
@@ -31,35 +36,46 @@ namespace account
  * @brief Account class to handle account information storage
  *
  */
-class AccountStorage
+class AccountStorageDB : public AccountStorage
 {
 public:
+
+    /***************************************************************************
+     * Interfaces
+     **************************************************************************/
+    bool SetDatabaseInterface(Database* database);
+
     /***************************************************************************
      * Account Load/Save
      **************************************************************************/
-    virtual bool loadAccountByID(const uint32_t& id, AccountInfo& acc) = 0;
-    virtual bool loadAccountByEMail(
-        const std::string& email, AccountInfo& acc) = 0;
+    bool loadAccountByID(const uint32_t& id, AccountInfo& acc) final;
+    bool loadAccountByEMail(const std::string& email, AccountInfo& acc) final;
 
-    virtual bool saveAccount(const AccountInfo& accInfo) = 0;
+    bool saveAccount(const AccountInfo& accInfo) final;
 
     /***************************************************************************
      * Gets Methods
      **************************************************************************/
-    virtual bool getPassword(const uint32_t& id, std::string& password) = 0;
+    bool getPassword(const uint32_t& id, std::string& password) final;
 
     /***************************************************************************
      * Coins Methods
      **************************************************************************/
-    virtual bool getCoins(
-        const uint32_t& id, const CoinType& type, uint32_t& coins) = 0;
-    virtual bool setCoins(
-        const uint32_t& id, const CoinType& type, const uint32_t& amount) = 0;
-    virtual bool registerCoinsTransaction(const uint32_t& id,
-        CoinTransactionType type, uint32_t coins, const CoinType& coinType,
-        const std::string& description) = 0;
+    bool getCoins(
+        const uint32_t& id, const CoinType& type, uint32_t& coins) final;
+    bool setCoins(
+        const uint32_t& id, const CoinType& type, const uint32_t& amount) final;
+    bool registerCoinsTransaction(const uint32_t& id, CoinTransactionType type,
+        uint32_t coins, const CoinType& coinType,
+        const std::string& description) final;
+
+private:
+    bool loadAccountPlayers(AccountInfo& acc);
+
+    Database* m_db = nullptr;
+    DatabaseTasks* m_dbTasks = nullptr;
 };
 
 } // namespace account
 
-#endif // SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_HPP
+#endif // SRC_CREATURES_PLAYERS_ACCOUNT_ACCOUNT_STORAGE_DB_HPP
