@@ -104,8 +104,13 @@ jobs:
       - name: Run build-wrapper
         run: |
           mkdir -p build
-          cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -S . -B build
+          cmake -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Debug -DUT=1 -S . -B build
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
+
+      - name: Run Tests
+        run: |
+          ./build/bin/canary_unittest
+          for f in `find ${{ github.workspace }}/build/tests/ -name '*.o'`; do   echo "Processing $f file..."; gcov -o ${f} x; done
 
       - name: Run PR sonar-scanner
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_target' }}
@@ -119,6 +124,7 @@ jobs:
             --define sonar.cfamily.threads="${{ env.NUMBER_OF_PROCESSORS  }}" \
             --define sonar.cfamily.cache.enabled=true \
             --define sonar.cfamily.cache.path=$HOME/.cfamily \
+            --define sonar.cfamily.gcov.reportsPath=${{ github.workspace }} \
             --define sonar.pullrequest.key=${{ github.event.pull_request.number }} \
             --define sonar.pullrequest.branch=${{ github.head_ref }} \
             --define sonar.pullrequest.base=${{ github.base_ref }}
@@ -134,7 +140,8 @@ jobs:
             --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
             --define sonar.cfamily.threads="${{ env.NUMBER_OF_PROCESSORS  }}" \
             --define sonar.cfamily.cache.enabled=true \
-            --define sonar.cfamily.cache.path=$HOME/.cfamily
+            --define sonar.cfamily.cache.path=$HOME/.cfamily \
+            --define sonar.cfamily.gcov.reportsPath=${{ github.workspace }}
 
       - name: SonarQube Quality Gate check
         uses: sonarsource/sonarqube-quality-gate-action@master
