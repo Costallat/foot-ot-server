@@ -56,6 +56,10 @@ target_link_libraries(${PROJECT_NAME}
     Catch2::Catch2WithMain
 )
 
+# target_compile_definitions(${PROJECT_NAME} PUBLIC "-g -O0 --coverage")
+target_compile_options(${PROJECT_NAME} PUBLIC -g -O0 --coverage)
+target_link_options(${PROJECT_NAME} PUBLIC --coverage)
+
 set_target_properties(${PROJECT_NAME}
     PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
