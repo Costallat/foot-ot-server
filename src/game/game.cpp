@@ -64,6 +64,8 @@ extern MoveEvents* g_moveEvents;
 extern Weapons* g_weapons;
 extern Scripts* g_scripts;
 extern Modules* g_modules;
+extern account::AccountStorage* g_accStorage;
+
 extern Imbuements* g_imbuements;
 extern LuaEnvironment g_luaEnvironment;
 
@@ -7555,11 +7557,12 @@ void Game::playerCreateMarketOffer(uint32_t playerId, uint8_t type, uint16_t spr
 
 		if (it.id == ITEM_STORE_COIN) {
             account::Account account(player->getAccount());
-			if(account.loadAccount()) {
-				SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
-				return;
-			}
-			uint32_t player_coins;
+            account.setAccountStorageInterface(g_accStorage);
+            if (account.loadAccount()) {
+                SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
+                return;
+            }
+                        uint32_t player_coins;
             std::tie(player_coins, std::ignore) =
                     account.getCoins(account::CoinType::COIN);
 
@@ -7666,6 +7669,7 @@ void Game::playerCancelMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 		if (it.id == ITEM_STORE_COIN) {
             account::Account account(player->getAccount());
+            account.setAccountStorageInterface(g_accStorage);
 			if(account.loadAccount()) {
 				SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
 				return;
@@ -7774,6 +7778,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 		if (it.id == ITEM_STORE_COIN) {
 			account::Account account(player->getAccount());
+            account.setAccountStorageInterface(g_accStorage);
 			if(account::ERROR_NO != account.loadAccount()) {
 				SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
 				return;
@@ -7820,6 +7825,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 		if (it.id == ITEM_STORE_COIN) {
 			account::Account account(player->getAccount());
+            account.setAccountStorageInterface(g_accStorage);
 			if(account::ERROR_NO != account.loadAccount())
 			{
 				SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
@@ -7889,6 +7895,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 		if (it.id == ITEM_STORE_COIN) {
 			account::Account account(player->getAccount());
+            account.setAccountStorageInterface(g_accStorage);
 			if(account.loadAccount()) {
 				SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
 				return;
@@ -7928,6 +7935,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 			sellerPlayer->setBankBalance(sellerPlayer->getBankBalance() + totalPrice);
 			if (it.id == ITEM_STORE_COIN) {
 				account::Account account(sellerPlayer->getAccount());
+                account.setAccountStorageInterface(g_accStorage);
                 if(account.loadAccount()) {
                     SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
                     return;
@@ -7942,6 +7950,7 @@ void Game::playerAcceptMarketOffer(uint32_t playerId, uint32_t timestamp, uint16
 
 				if (IOLoginData::loadPlayerById(&sellerPlayer, offer.playerId)) {
 					account::Account account(sellerPlayer.getAccount());
+                    account.setAccountStorageInterface(g_accStorage);
                     if(account.loadAccount()) {
                     SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
                     return;
@@ -8006,6 +8015,7 @@ void Game::playerBuyStoreOffer(uint32_t playerId, uint32_t offerId,
 		}
 
 		account::Account account(player->getAccount());
+        account.setAccountStorageInterface(g_accStorage);
         if(account.loadAccount()) {
             SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
             return;
@@ -8379,8 +8389,10 @@ void Game::playerCoinTransfer(uint32_t playerId,
 	} else {
 
 		account::Account sender_account(sender->getAccount());
+        sender_account.setAccountStorageInterface(g_accStorage);
 		sender_account.loadAccount();
 		account::Account receiver_account(receiver -> getAccount());
+        receiver_account.setAccountStorageInterface(g_accStorage);
 		receiver_account.loadAccount();
 		uint32_t sender_coins;
         int coins = 0;

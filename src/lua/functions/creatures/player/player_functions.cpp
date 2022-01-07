@@ -34,6 +34,7 @@ extern Chat* g_chat;
 extern Monsters g_monsters;
 extern Spells* g_spells;
 extern Vocations g_vocations;
+extern account::AccountStorage* g_accStorage;
 
 int PlayerFunctions::luaPlayerSendInventory(lua_State* L) {
 	// player:sendInventory()
@@ -2314,6 +2315,7 @@ int PlayerFunctions::luaPlayerGetTibiaCoins(lua_State* L) {
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
 	account::Account account(player->getAccount());
+    account.setAccountStorageInterface(g_accStorage);
 	account.loadAccount();
 	uint32_t coins;
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
@@ -2335,6 +2337,7 @@ int PlayerFunctions::luaPlayerAddTibiaCoins(lua_State* L) {
   uint32_t coins = getNumber<uint32_t>(L, 2);
 
   account::Account account(player->getAccount());
+  account.setAccountStorageInterface(g_accStorage);
   account.loadAccount();
   if(account.addCoins(account::CoinType::COIN, coins)) {
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
@@ -2357,6 +2360,7 @@ int PlayerFunctions::luaPlayerRemoveTibiaCoins(lua_State* L) {
   uint32_t coins = getNumber<uint32_t>(L, 2);
 
   account::Account account(player->getAccount());
+  account.setAccountStorageInterface(g_accStorage);
   account.loadAccount();
   if (account.removeCoins(account::CoinType::COIN, coins)) {
 	std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);
@@ -2527,7 +2531,7 @@ int PlayerFunctions::luaPlayerOpenImbuementWindow(lua_State* L) {
 		pushBoolean(L, false);
 		return 1;
 	}
-	
+
 	Item* item = getUserdata<Item>(L, 2);
 	if (!item) {
 		reportErrorFunc(getErrorDesc(LUA_ERROR_ITEM_NOT_FOUND));
