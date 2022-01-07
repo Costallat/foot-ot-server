@@ -186,7 +186,7 @@ error_t Account::removeCoins(const CoinType& type, const uint32_t& amount)
     }
 
     if (coins < amount) {
-        SPDLOG_INFO("Account doesn't have enough coins! current[{}], use:[{}]",
+        SPDLOG_INFO("Account doesn't have enough coins! current[{}], remove:[{}]",
             coins, amount);
         return ERROR_REMOVE_COINS;
     }
@@ -210,12 +210,12 @@ error_t Account::removeCoins(const CoinType& type, const uint32_t& amount)
 std::string Account::getPassword()
 {
     if (!m_accLoaded) {
-        return { 0, ERROR_NOT_INITIALIZED };
+        return "";
     }
 
     std::string password;
     if (!m_storageInterface->getPassword(m_account.id, password)) {
-        SPDLOG_ERROR("Failed to get account password: [{}]", m_account.id);
+        SPDLOG_ERROR("Failed to get account[{}] password!", m_account.id);
         password.clear();
         return password;
     }

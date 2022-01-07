@@ -84,3 +84,12 @@ endif()
 # Add project
 # *****************************************************************************
 add_subdirectory(src)
+
+option(DUT "Build the tests" OFF)
+if(UT)
+  log_option_enabled("UT")
+  add_subdirectory(tests)
+else()
+  log_option_disabled("UT")
+endif()
+
