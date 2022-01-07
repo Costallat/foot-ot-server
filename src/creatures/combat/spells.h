@@ -286,7 +286,7 @@ class Spell : public BaseSpell
 		bool getAllowOnSelf() const {
 			return allowOnSelf;
 		}
-		void setAllowOnSelf(bool s) { 
+		void setAllowOnSelf(bool s) {
 			allowOnSelf = s;
 		}
 		bool getLockedPZ() const {

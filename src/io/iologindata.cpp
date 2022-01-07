@@ -31,6 +31,7 @@
 extern ConfigManager g_config;
 extern Game g_game;
 extern Monsters g_monsters;
+extern account::AccountStorage* g_accStorage;
 
 bool IOLoginData::authenticateAccountPassword(const std::string& password, account::Account& account) {
 
@@ -46,6 +47,7 @@ bool IOLoginData::authenticateAccountPassword(const std::string& password, accou
 bool IOLoginData::gameWorldAuthentication(const std::string& email, const std::string& password, std::string& characterName, uint32_t *accountId)
 {
 	account::Account account(email);
+    account.setAccountStorageInterface(g_accStorage);
 
     if (account::ERROR_NO != account.loadAccount()) {
 		SPDLOG_ERROR("Failed to load account EMAIL:[{}] doesn't match any account.", email);
@@ -273,6 +275,7 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
   Database& db = Database::getInstance();
 
   account::Account account(result->getNumber<uint32_t>("account_id"));
+  account.setAccountStorageInterface(g_accStorage);
   if(account::ERROR_NO != account.loadAccount())
   {
     SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());

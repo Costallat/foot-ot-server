@@ -36,6 +36,7 @@
 
 extern ConfigManager g_config;
 extern Game g_game;
+extern account::AccountStorage* g_accStorage;
 
 void ProtocolLogin::disconnectClient(const std::string& message, uint16_t version)
 {
@@ -51,6 +52,7 @@ void ProtocolLogin::disconnectClient(const std::string& message, uint16_t versio
 void ProtocolLogin::getCharacterList(const std::string& email, const std::string& password, uint16_t version)
 {
 	account::Account account(email);
+    account.setAccountStorageInterface(g_accStorage);
 	if (!IOLoginData::authenticateAccountPassword(password, account)) {
 		disconnectClient("Email or password is not correct", version);
 		return;

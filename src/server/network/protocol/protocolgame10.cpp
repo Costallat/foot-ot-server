@@ -50,6 +50,7 @@ extern Modules *g_modules;
 extern Spells *g_spells;
 extern Imbuements *g_imbuements;
 extern Monsters g_monsters;
+extern account::AccountStorage* g_accStorage;
 
 void ProtocolGame::AddItem(NetworkMessage &msg, uint16_t id, uint8_t count)
 {
@@ -4166,6 +4167,7 @@ void ProtocolGame::updateCoinBalance()
 			Player* threadPlayer = g_game.getPlayerByID(playerId);
 			if (threadPlayer) {
 				account::Account account(threadPlayer->getAccount());
+                account.setAccountStorageInterface(g_accStorage);
 				account.loadAccount();
 				uint32_t coins;
 				std::tie(coins, std::ignore) = account.getCoins(account::CoinType::COIN);

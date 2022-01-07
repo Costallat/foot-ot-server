@@ -28,6 +28,8 @@
 #include "config/configmanager.h"
 #include "declarations.hpp"
 #include "creatures/combat/spells.h"
+#include "creatures/players/account/account_storage.hpp"
+#include "creatures/players/account/account_storage_db.hpp"
 #include "database/databasemanager.h"
 #include "database/databasetasks.h"
 #include "game/game.h"
@@ -62,6 +64,10 @@ Npcs g_npcs;
 Vocations g_vocations;
 extern Scripts* g_scripts;
 RSA2 g_RSA;
+
+//Account Storage
+account::AccountStorageDB accStorageDB;
+account::AccountStorage* g_accStorage = &accStorageDB;
 
 std::mutex g_loaderLock;
 std::condition_variable g_loaderSignal;
