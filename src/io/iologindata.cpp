@@ -294,9 +294,10 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
   }
 
 	int res = 0;
-	uint32_t coins, tournament_coins;
+	uint32_t coins = 0;
 
-	if (auto [ coins, res ] = account.getCoins(account::CoinType::COIN); account::ERROR_NO != res) {
+	if (auto [ coins, res ] = account.getCoins(account::CoinType::COIN);
+            account::ERROR_NO != res) {
 		SPDLOG_ERROR("Failed to load Player [{}] coins. (Error: [{}])",
 			player->name, res);
 		return false;
