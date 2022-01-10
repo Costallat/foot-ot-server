@@ -8394,7 +8394,7 @@ void Game::playerCoinTransfer(uint32_t playerId,
 		account::Account receiver_account(receiver -> getAccount());
         receiver_account.setAccountStorageInterface(g_accStorage);
 		receiver_account.loadAccount();
-		uint32_t sender_coins;
+		uint32_t sender_coins = 0;
         int coins = 0;
         if(auto [ coins, result ] = receiver_account.getCoins(account::CoinType::COIN);
             account::ERROR_NO == result) {
