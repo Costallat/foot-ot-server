@@ -763,6 +763,59 @@ TEST_CASE("Remove Coins Not Enough Coins", "[UnitTest]")
     CHECK(result == account::ERROR_REMOVE_COINS);
 }
 
+TEST_CASE("Remove Coins Register Transaction Error", "[UnitTest]")
+{
+    account::Account account(account_id);
+
+    // Create Stub Storage Interface
+    account::AccountStorageStub accStub;
+
+    // Create Storage Interface Pointer
+    account::AccountStorage* storage;
+    storage = &accStub;
+
+    // Set Account Storage Interface
+    error_t result;
+    result = account.setAccountStorageInterface(storage);
+    REQUIRE(result == account::ERROR_NO);
+
+    // Load Account
+    result = account.loadAccount();
+    REQUIRE(result == account::ERROR_NO);
+
+    // Remove Coins
+    accStub.m_forceRegisterError = true;
+    accStub.m_coins = 50;
+    result = account.removeCoins(account::COIN, 32);
+    CHECK(result == account::ERROR_NO);
+}
+
+TEST_CASE("Remove Coins", "[UnitTest]")
+{
+    account::Account account(account_id);
+
+    // Create Stub Storage Interface
+    account::AccountStorageStub accStub;
+
+    // Create Storage Interface Pointer
+    account::AccountStorage* storage;
+    storage = &accStub;
+
+    // Set Account Storage Interface
+    error_t result;
+    result = account.setAccountStorageInterface(storage);
+    REQUIRE(result == account::ERROR_NO);
+
+    // Load Account
+    result = account.loadAccount();
+    REQUIRE(result == account::ERROR_NO);
+
+    // Remove Coins
+    accStub.m_coins = 50;
+    result = account.removeCoins(account::COIN, 32);
+    CHECK(result == account::ERROR_NO);
+    CHECK(accStub.m_coins == 18);
+}
 
 /*******************************************************************************
  * getPassword()
