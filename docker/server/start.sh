@@ -93,6 +93,19 @@ echo ""
 echo "================================"
 echo ""
 
+if [ -d "/shared" ]; then
+	echo ""
+	echo "===== Copy Server Configuration ====="
+	echo ""
+
+	cp config.lua /shared/
+	cp -r data/  /shared/
+
+	echo ""
+	echo "================================"
+	echo ""
+fi
+
 echo ""
 echo "===== Start Server ====="
 echo ""
