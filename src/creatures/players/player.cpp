@@ -4788,7 +4788,7 @@ void Player::setPremiumDays(int32_t v)
 	sendBasicData();
 }
 
-void Player::setTibiaCoins(int32_t v)
+void Player::setCoins(int32_t v)
 {
 	coinBalance = v;
 }

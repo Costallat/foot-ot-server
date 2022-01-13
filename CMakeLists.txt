@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 # CMAKE
-# apt install build-essential git
+# apt install build-essential git libssl-dev
 # git clone https://github.com/Kitware/CMake/; cd CMake
 # ./bootstrap && make && sudo make install
 
@@ -84,3 +84,12 @@ endif()
 # Add project
 # *****************************************************************************
 add_subdirectory(src)
+
+option(DUT "Build the tests" OFF)
+if(UT)
+  log_option_enabled("UT")
+  add_subdirectory(tests)
+else()
+  log_option_disabled("UT")
+endif()
+

@@ -20,6 +20,9 @@
 #ifndef SRC_CREATURES_CREATURES_DEFINITIONS_HPP_
 #define SRC_CREATURES_CREATURES_DEFINITIONS_HPP_
 
+#include <list>
+#include <unordered_map>
+
 // Enum
 
 enum SkillsId_t {
@@ -615,7 +618,7 @@ struct FamiliarEntry {
 struct Skill {
 	uint64_t tries = 0;
 	uint16_t level = 10;
-	double_t percent = 0;
+	double percent = 0;
 };
 
 struct Kill {

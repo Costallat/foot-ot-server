@@ -29,9 +29,8 @@ using ItemBlockList = std::list<std::pair<int32_t, Item*>>;
 class IOLoginData
 {
 	public:
-		static bool authenticateAccountPassword(const std::string& email,
-                                                const std::string& password,
-                                                account::Account *account);
+		static bool authenticateAccountPassword(const std::string& password,
+                                                account::Account &account);
 		static bool gameWorldAuthentication(const std::string& accountName,
                                             const std::string& password,
                                             std::string& characterName,

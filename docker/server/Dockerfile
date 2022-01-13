@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends cmake
 RUN apt-get update && apt-get install -y --no-install-recommends git
 
 RUN apt-get install -y --no-install-recommends \
-	build-essential ca-certificates curl zip unzip tar pkg-config
+	build-essential ca-certificates curl zip unzip tar pkg-config ninja-build
 
 RUN apt-get install -y --no-install-recommends libluajit-5.1-dev unzip
 

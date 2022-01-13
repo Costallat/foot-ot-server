@@ -36,6 +36,7 @@
 
 extern ConfigManager g_config;
 extern Game g_game;
+extern account::AccountStorage* g_accStorage;
 
 void ProtocolLogin::disconnectClient(const std::string& message, uint16_t version)
 {
@@ -50,8 +51,14 @@ void ProtocolLogin::disconnectClient(const std::string& message, uint16_t versio
 
 void ProtocolLogin::getCharacterList(const std::string& email, const std::string& password, uint16_t version)
 {
-	account::Account account;
-	if (!IOLoginData::authenticateAccountPassword(email, password, &account)) {
+	account::Account account(email);
+    account.setAccountStorageInterface(g_accStorage);
+    if (account::ERROR_NO != account.loadAccount()) {
+		SPDLOG_ERROR("Failed to load account EMAIL:[{}]", email);
+		return;
+	}
+
+	if (!IOLoginData::authenticateAccountPassword(password, account)) {
 		disconnectClient("Email or password is not correct", version);
 		return;
 	}
@@ -75,8 +82,6 @@ void ProtocolLogin::getCharacterList(const std::string& email, const std::string
 	output->addString(email + "\n" + password);
 
 	// Add char list
-	std::vector<account::Player> players;
-	account.GetAccountPlayers(&players);
 	output->addByte(0x64);
 
 	output->addByte(1);  // number of worlds
@@ -89,12 +94,15 @@ void ProtocolLogin::getCharacterList(const std::string& email, const std::string
 
 	output->addByte(0);
 
+    // FIXME: this will get the deleted players too
+	std::map<std::string, uint64_t> players;
+    std::tie(players, std::ignore) = account.getAccountPlayers();
 	uint8_t size = std::min<size_t>(std::numeric_limits<uint8_t>::max(),
                                   players.size());
 	output->addByte(size);
-	for (uint8_t i = 0; i < size; i++) {
+	for (auto it = players.begin(); it != players.end(); ++it) {
 		output->addByte(0);
-		output->addString(players[i].name);
+		output->addString(it->first);
 	}
 
 	// Add premium days
@@ -103,8 +111,7 @@ void ProtocolLogin::getCharacterList(const std::string& email, const std::string
 		output->addByte(1);
 		output->add<uint32_t>(0);
 	} else {
-	uint32_t days;
-	account.GetPremiumRemaningDays(&days);
+	uint32_t days = account.getPremiumRemainingDays();
 	output->addByte(0);
 	output->add<uint32_t>(time(nullptr) + (days * 86400));
   }

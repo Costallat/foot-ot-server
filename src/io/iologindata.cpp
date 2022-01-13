@@ -31,17 +31,13 @@
 extern ConfigManager g_config;
 extern Game g_game;
 extern Monsters g_monsters;
+extern account::AccountStorage* g_accStorage;
 
-bool IOLoginData::authenticateAccountPassword(const std::string& email, const std::string& password, account::Account *account) {
-	if (account::ERROR_NO != account->LoadAccountDB(email)) {
-		SPDLOG_ERROR("Email {} doesn't match any account.", email);
-		return false;
-	}
+bool IOLoginData::authenticateAccountPassword(const std::string& password, account::Account& account) {
 
-	std::string accountPassword;
-	account->GetPassword(&accountPassword);
+	std::string accountPassword = account.getPassword();
 	if (transformToSHA1(password) != accountPassword) {
-			SPDLOG_ERROR("Password '{}' doesn't match any account", transformToSHA1(password));
+			SPDLOG_ERROR("Password [{}] doesn't match with the account", transformToSHA1(password));
 			return false;
 	}
 
@@ -50,18 +46,31 @@ bool IOLoginData::authenticateAccountPassword(const std::string& email, const st
 
 bool IOLoginData::gameWorldAuthentication(const std::string& email, const std::string& password, std::string& characterName, uint32_t *accountId)
 {
-	account::Account account;
-	if (!IOLoginData::authenticateAccountPassword(email, password, &account)) {
+	account::Account account(email);
+    account.setAccountStorageInterface(g_accStorage);
+
+    if (account::ERROR_NO != account.loadAccount()) {
+		SPDLOG_ERROR("Failed to load account EMAIL:[{}].", email);
 		return false;
 	}
 
-	account::Player player;
-	if (account::ERROR_NO != account.GetAccountPlayer(&player, characterName)) {
+	if (!IOLoginData::authenticateAccountPassword(password, account)) {
+		return false;
+	}
+    std::map<std::string, uint64_t> players;
+	if (auto [players, result] = account.getAccountPlayers();
+	    account::ERROR_NO != result) {
 		SPDLOG_ERROR("Player not found or deleted for account.");
 		return false;
 	}
 
-	account.GetID(accountId);
+    auto search = players.find(characterName);
+    if ((search == players.end()) || (search->second != 0)) {
+		SPDLOG_ERROR("Player not found or deleted.");
+		return false;
+    }
+
+	*accountId = account.getID();
 
 	return true;
 }
@@ -265,29 +274,41 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
 
   Database& db = Database::getInstance();
 
-  uint32_t accountId = result->getNumber<uint32_t>("account_id");
-  account::Account acc;
-  acc.SetDatabaseInterface(&db);
-  acc.LoadAccountDB(accountId);
+  account::Account account(result->getNumber<uint32_t>("account_id"));
+  account.setAccountStorageInterface(g_accStorage);
+  if(account::ERROR_NO != account.loadAccount())
+  {
+    SPDLOG_ERROR("Failed to load Account: [{}]", account.getID());
+    return false;
+  }
 
   player->setGUID(result->getNumber<uint32_t>("id"));
   player->name = result->getString("name");
-  acc.GetID(&(player->accountNumber));
-  acc.GetAccountType(&(player->accountType));
+  player->accountNumber = account.getID();
+  player->accountType = account.getAccountType();
 
   if (g_config.getBoolean(FREE_PREMIUM)) {
     player->premiumDays = std::numeric_limits<uint16_t>::max();
   } else {
-    acc.GetPremiumRemaningDays(&(player->premiumDays));
+    player->premiumDays = account.getPremiumRemainingDays();
   }
 
-  acc.GetCoins(&(player->coinBalance));
+	int res = 0;
+	uint32_t coins = 0;
+
+	if (auto [ coins, res ] = account.getCoins(account::CoinType::COIN);
+            account::ERROR_NO != res) {
+		SPDLOG_ERROR("Failed to load Player [{}] coins. (Error: [{}])",
+			player->name, res);
+		return false;
+	}
+	player->coinBalance = coins;
 
   player->preyBonusRerolls = result->getNumber<uint16_t>("bonus_rerolls");
 
   Group* group = g_game.groups.getGroup(result->getNumber<uint16_t>("group_id"));
   if (!group) {
-    SPDLOG_ERROR("Player {} has group id {} whitch doesn't exist", player->name, result->getNumber<uint16_t>("group_id"));
+    SPDLOG_ERROR("Player {} has group id {} which doesn't exist", player->name, result->getNumber<uint16_t>("group_id"));
     return false;
   }
   player->setGroup(group);
