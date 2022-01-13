@@ -28,7 +28,7 @@ namespace account
  * Interfaces
  **************************************************************************/
 
-bool AccountStorageDB::SetDatabaseInterface(Database* database)
+bool AccountStorageDB::setDatabaseInterface(Database* database)
 {
     if (database == nullptr) {
         return false;

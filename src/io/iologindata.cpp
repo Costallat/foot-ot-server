@@ -50,7 +50,7 @@ bool IOLoginData::gameWorldAuthentication(const std::string& email, const std::s
     account.setAccountStorageInterface(g_accStorage);
 
     if (account::ERROR_NO != account.loadAccount()) {
-		SPDLOG_ERROR("Failed to load account EMAIL:[{}] doesn't match any account.", email);
+		SPDLOG_ERROR("Failed to load account EMAIL:[{}].", email);
 		return false;
 	}
 

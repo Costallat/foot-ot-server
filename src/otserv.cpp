@@ -200,6 +200,8 @@ void loadModules() {
 		"data/npclua");
 
 	g_game.loadBoostedCreature();
+
+    accStorageDB.setDatabaseInterface(&Database::getInstance());
 }
 
 #ifndef UNIT_TESTING

@@ -43,7 +43,7 @@ public:
     /***************************************************************************
      * Interfaces
      **************************************************************************/
-    bool SetDatabaseInterface(Database* database);
+    bool setDatabaseInterface(Database* database);
 
     /***************************************************************************
      * Account Load/Save
