@@ -53,6 +53,11 @@ void ProtocolLogin::getCharacterList(const std::string& email, const std::string
 {
 	account::Account account(email);
     account.setAccountStorageInterface(g_accStorage);
+    if (account::ERROR_NO != account.loadAccount()) {
+		SPDLOG_ERROR("Failed to load account EMAIL:[{}]", email);
+		return;
+	}
+
 	if (!IOLoginData::authenticateAccountPassword(password, account)) {
 		disconnectClient("Email or password is not correct", version);
 		return;
