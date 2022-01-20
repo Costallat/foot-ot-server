@@ -1,4 +1,4 @@
-local xml_monster_dir = 'data/world/canary-monster.xml'
+local xml_monster_dir = 'data/world/otservbr-spawn.xml' -- Diretório do arquivo onde contém os monstros.
 local new_file_name = 'monster_count.txt'
 
 local count_monsters = TalkAction("/countmonsters")
@@ -35,7 +35,6 @@ function count_monsters.onSay(player, words, param)
 	writing_file:write('--- Total de Monstros no Servidor ---\n')
 
 	for monster, count in pairsByKeys(monsters) do
-		--Spdlog.info(monster, count)
 		writing_file:write(monster..' - '..count..'\n')
 	end
 

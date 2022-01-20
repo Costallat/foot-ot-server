@@ -10,14 +10,13 @@ for index, value in ipairs(CustomDoorTable) do
 end
 
 local customDoor = Action()
-
 function customDoor.onUse(player, item, fromPosition, target, toPosition, isHotkey)
-	if Creature.isInsideDoor(player, toPosition) then
+	if Creature.checkCreatureInsideDoor(player, toPosition) then
 		return true
 	end
 
 	for index, value in ipairs(CustomDoorTable) do
-		if value.closedDoor == item.itemid then
+		 if value.closedDoor == item.itemid then
 			item:transform(value.openDoor)
 			return true
 		end

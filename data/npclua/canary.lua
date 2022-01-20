@@ -33,11 +33,23 @@ npcConfig.flags = {
 
 -- Npc shop
 npcConfig.shop = {
-	{clientId = 123, buy = 16000, sell = 16000, count = 1},
+	{clientId = 123, buy = 32000, sell = 16000, count = 1},
 	{clientId = 130, buy = 100, count = 1},
 	{clientId = 135, buy = 5000, count = 1},
 	{clientId = 138, buy = 600, count = 1}
 }
+-- On buy npc shop message
+npcType.onBuyItem = function(npc, player, itemId, subType, amount, inBackpacks, name, totalCost)
+	npc:sellItem(player, itemId, amount, subType, true, inBackpacks, 2854)
+	player:sendTextMessage(MESSAGE_INFO_DESCR, string.format("Bought %ix %s for %i %s.", amount, name, totalCost, ItemType(npc:getCurrency()):getPluralName():lower()))
+end
+-- On sell npc shop message
+npcType.onSellItem = function(npc, player, clientId, subtype, amount, name, totalCost)
+	player:sendTextMessage(MESSAGE_INFO_DESCR, string.format("Sold %ix %s for %i gold.", amount, name, totalCost))
+end
+-- On check npc shop message (look item)
+npcType.onCheckItem = function(npc, player, clientId, subType)
+end
 
 -- Create keywordHandler and npcHandler
 local keywordHandler = KeywordHandler:new()
@@ -48,7 +60,7 @@ npcType.onThink = function(npc, interval)
 	npcHandler:onThink(npc, interval)
 end
 
--- onAppear
+-- onAppear 
 npcType.onAppear = function(npc, creature)
 	npcHandler:onAppear(npc, creature)
 end
@@ -68,54 +80,39 @@ npcType.onSay = function(npc, creature, type, message)
 	npcHandler:onSay(npc, creature, type, message)
 end
 
--- onPlayerCloseChannel
-npcType.onCloseChannel = function(npc, player)
-	npcHandler:onCloseChannel(npc, player)
-end
-
--- On buy npc shop message
-npcType.onBuyItem = function(npc, player, itemId, subType, amount, inBackpacks, name, totalCost)
-	npc:sellItem(player, itemId, amount, subType, true, inBackpacks, 2854)
-	player:sendTextMessage(MESSAGE_INFO_DESCR, string.format("Bought %ix %s for %i %s.", amount, name, totalCost, ItemType(npc:getCurrency()):getPluralName():lower()))
-end
-
--- On sell npc shop message
-npcType.onSellItem = function(npc, player, clientId, subtype, amount, name, totalCost)
-	player:sendTextMessage(MESSAGE_INFO_DESCR, string.format("Sold %ix %s for %i gold.", amount, name, totalCost))
-end
-
--- On check npc shop message (look item)
-npcType.onCheckItem = function(npc, player, clientId, subType)
+npcType.onCloseChannel = function(npc, creature)
+	npcHandler:onCloseChannel(npc, creature)
 end
 
 -- Function called by the callback "npcHandler:setCallback(CALLBACK_GREET, greetCallback)" in end of file
-local function greetCallback(npc, player)
+local function greetCallback(npc, creature)
+	local playerId = creature:getId()
 	npcHandler:setMessage(MESSAGE_GREET, "Hello |PLAYERNAME|, you need more info about {canary}?")
 	return true
 end
 
 -- On creature say callback
-local function creatureSayCallback(npc, player, type, msg)
+local function creatureSayCallback(npc, creature, type, message)
+	local player = Player(creature)
 	local playerId = player:getId()
-	if not npcHandler:checkInteraction(npc, player) then
+
+	if not npcHandler:checkInteraction(npc, creature) then
 		return false
 	end
 
-	if MsgContains(msg, "canary") then
-		if npcHandler:getTopic(playerId) == 0 then
-			npcHandler:say({
-				"The goal is for Canary to be an 'engine', that is, it will be \z
-					a server with a 'clean' datapack, with as few things as possible, \z
-					thus facilitating development and testing.",
-				"See more on our {discord group}."
-			}, npc, player, 3000)
-			npcHandler:setTopic(playerId, 1)
-		end
-	elseif MsgContains(msg, "discord group") then
+	if MsgContains(message, "canary") then
+		npcHandler:say({
+			"The goal is for Canary to be an 'engine', that is, it will be \z
+				a server with a 'clean' datapack, with as few things as possible, \z
+				thus facilitating development and testing.",
+			"See more on our {discord group}."
+		}, npc, creature, 3000)
+		npcHandler:setTopic(playerId, 1)
+	elseif MsgContains(message, "discord group") then
 		if npcHandler:getTopic(playerId) == 1 then
-			npcHandler:say("This the our discord group link: {https://discordapp.com/invite/3NxYnyV}", npc, player)
-			npcHandler:setTopic(playerId, 0)
+			npcHandler:say("This the our discord group link: {https://discordapp.com/invite/3NxYnyV}", npc, creature)
 		end
+		npcHandler:setTopic(playerId, 0)
 	end
 	return true
 end
@@ -134,3 +131,4 @@ npcHandler:addModule(FocusModule:new())
 
 -- Register npc
 npcType:register(npcConfig)
+

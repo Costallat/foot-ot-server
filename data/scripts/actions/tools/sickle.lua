@@ -1,9 +1,13 @@
 local sickle = Action()
 
 function sickle.onUse(player, item, fromPosition, target, toPosition, isHotkey)
-	return ActionsLib.useSickle(player, item, fromPosition, target, toPosition, isHotkey)
-	or ActionsLib.destroyItem(player, target, toPosition)
+	if target.itemid == 5463 then
+		target:transform(5462)
+		target:decay()
+		Game.createItem(5466, 1, toPosition)
+		return true
+	end
 end
 
-sickle:id(3293, 3306, 32595)
+sickle:id(3293)
 sickle:register()

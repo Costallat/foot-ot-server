@@ -94,17 +94,15 @@ Blessings.sendBlessStatus = function(player, curBless)
 		curBless = player:getBlessings(callback) -- ex: {1, 2, 5, 7}
 	end
 	Blessings.DebugPrint(#curBless, "sendBlessStatus curBless")
-	if player:getClient().version >= 1120 then
-		local bitWiseCurrentBless = 0
-		local blessCount = 0
+	local bitWiseCurrentBless = 0
+	local blessCount = 0
 
-		for i = 1, #curBless do
-			if curBless[i].losscount then
-				blessCount = blessCount + 1
-			end
-			if (not curBless[i].losscount and Blessings.Config.HasToF) or curBless[i].losscount then
-				bitWiseCurrentBless = bit.bor(bitWiseCurrentBless, Blessings.BitWiseTable[curBless[i].id])
-			end
+	for i = 1, #curBless do
+		if curBless[i].losscount then
+			blessCount = blessCount + 1
+		end
+		if (not curBless[i].losscount and Blessings.Config.HasToF) or curBless[i].losscount then
+			bitWiseCurrentBless = bit.bor(bitWiseCurrentBless, Blessings.BitWiseTable[curBless[i].id])
 		end
 	end
 
@@ -113,17 +111,13 @@ Blessings.sendBlessStatus = function(player, curBless)
 	end
 
 	msg:addU16(bitWiseCurrentBless)
-		dlgBtnColour = 1
-		if blessCount >= 7 then
-			dlgBtnColour = 3
-		elseif blessCount > 0 then
-			dlgBtnColour = 2
-			msg:addByte(dlgBtnColour) -- Bless dialog button colour 1 = Disabled | 2 = normal | 3 = green
-		elseif #curBless >= 5 then
-		msg:addU16(1) -- TODO ?
-	else
-		msg:addU16(0)
-	end
+	msg:addByte(blessCount >= 7 and 3 or (blessCount > 0 and 2 or 1)) -- Bless dialog button colour 1 = Disabled | 2 = normal | 3 = green
+
+	-- if #curBless >= 5 then
+	-- 	msg:addU16(1) -- TODO ?
+	-- else
+	-- 	msg:addU16(0)
+	-- end
 
 	msg:sendToPlayer(player)
 end
@@ -156,7 +150,7 @@ Blessings.sendBlessDialog = function(player)
 
 	local playerAmulet = player:getSlotItem(CONST_SLOT_NECKLACE)
 	local haveSkull = player:getSkull() >= 4
-	hasAol = (playerAmulet and playerAmulet:getId() == ITEM_AMULETOFLOSS)
+	hasAol = (playerAmulet and playerAmulet:getClientId() == ITEM_AMULETOFLOSS)
 
 	equipLoss = Blessings.LossPercent[#curBless].item
 	if haveSkull then
@@ -342,8 +336,8 @@ end
 
 Blessings.PlayerDeath = function(player, corpse, killer)
 	local hasToF = Blessings.Config.HasToF and player:hasBlessing(1) or false
-	local hasAol = (player:getSlotItem(CONST_SLOT_NECKLACE) and player:getSlotItem(CONST_SLOT_NECKLACE):getId() == ITEM_AMULETOFLOSS)
-	local haveSkull = table.contains({SKULL_RED, SKULL_BLACK}, player:getSkull())
+	local hasAol = (player:getSlotItem(CONST_SLOT_NECKLACE) and player:getSlotItem(CONST_SLOT_NECKLACE):getClientId() == ITEM_AMULETOFLOSS)
+	local haveSkull = isInArray({SKULL_RED, SKULL_BLACK}, player:getSkull())
 	local curBless = player:getBlessings()
 
 	if haveSkull then  -- lose all bless + drop all items

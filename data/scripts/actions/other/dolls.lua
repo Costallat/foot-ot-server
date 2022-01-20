@@ -1,6 +1,6 @@
-local dollsTable = {
-	[5080] = {"Hug me!"},
-	[5668] = {
+local dolls = {
+	[5080] = {"Hug me."},
+	[5669] = {
 		"It's not winning that matters, but winning in style.",
 		"Today's your lucky day. Probably.",
 		"Do not meddle in the affairs of dragons, for you are crunchy and taste good with ketchup.",
@@ -19,8 +19,8 @@ local dollsTable = {
 		"Aaa... CHOO!",
 		"You... will.... burn!!"
 	},
-	[6387] = {"Merry Christmas |PLAYERNAME|."},
-	[6511] = {
+	[6388] = {"Merry Christmas |PLAYERNAME|."},
+	[6512] = {
 		"Ho ho ho",
 		"Jingle bells, jingle bells...",
 		"Have you been naughty?",
@@ -28,84 +28,40 @@ local dollsTable = {
 		"Merry Christmas!",
 		"Can you stop squeezing me now... I'm starting to feel a little sick."
 	},
-	[8146] = {"ARE YOU PREPARED TO FACE YOUR DESTINY?"},
-	[8149] = {
+	[8974] = {"ARE YOU PREPARED TO FACE YOUR DESTINY?"},
+	[8977] = {
 		"Weirdo, you're a weirdo! Actually all of you are!",
 		"Pie for breakfast, pie for lunch and pie for dinner!",
 		"All hail the control panel!",
-		"I own, god owns, perfect match!",
+		"I own, Tibiacity owns, perfect match!",
 		"Hug me! Feed me! Hail me!"
 	},
-	[8153] = {
+	[8981] = {
 		"It's news to me.",
 		"News, updated as infrequently as possible!",
 		"Extra! Extra! Read all about it!",
 		"Fresh off the press!"
 	},
-	[8154] = {
-		"Hail!",
-		"So cold.",
+	[8982] = {
+		"Hail TibiaNordic!",
+		"So cold..",
 		"Run, mammoth!"
 	},
-	[9144] = {
-		"Hail |PLAYERNAME|! Hail!",
-		"Hauopa!",
-		"WHERE IS MY HYDROMEL?!",
-		"Yala Boom"
-	},
-	[12043] = {
-		"For zze emperor!",
-		"Hail!",
-		"Hail |PLAYERNAME|!"
-	},
-	[12904] = {
-		"Mhausheausheu! What a FAIL! Mwahaha!",
-		"Hail |PLAYERNAME|! You are wearing old socks!",
-		"You are so unpopular even your own shadow refuses to follow you.",
-		"Have fun!"
-	},
-	[14764] = {
-		"My powers are limitless!",
-		"Hail!"
-	},
-	[18343] = {
-		"Hail!",
-		"Shhhhhh, please be quiet!",
-		"Books are great!! Aren't they?"
-	},
-	[21435] = {
+	[23806] = {
 		"I can hear their whisperings... Revenge!",
 		"You shall feel pain and terror, |PLAYERNAME|",
 		"I do not need a sword to slaughter you",
 		"My sword is broken, but my spirit is not dead",
 		"I can say 469 and more...",
-		"My dark magic lies on the world"
+		"My dark magic lies on tibialatina.wikia.com"
 	},
-	[21947] = {
-		"Hail!",
-		"Don't be afraid of the darkness!",
-		"Feel lucky, |PLAYERNAME|!",
-		"Purrrrrrr!"
-	},
-	[21962] = {
-		"Hail! (União&Força)",
-		"Hail |PLAYERNAME|! (União&Força)",
-		"Only the real killers can touch me!",
-		"The path of assassin is found in death, DIE!",
-		"<FART...> Ahhh... silent and deadly..."
-	},
-	[22120] = {
-		"Silence! I smell something!",
-		"Let me guide you, |PLAYERNAME|!",
-		"I have a bad feeling about this.",
-		"Watch your steps - we found the pit latrine."
-	}
+	[24331] = {"Hail Tibia Brasileiros! (União&Força)"}
 }
 
-local dolls = Action()
+local doll = Action()
 
-function dolls.onUse(player, item, fromPosition, target, toPosition, isHotkey)
-	local sounds = dollsTable[item.itemid]
+function doll.onUse(player, item, fromPosition, target, toPosition, isHotkey)
+	local sounds = dolls[item.itemid]
 	if not sounds then
 		return false
 	end
@@ -114,38 +70,22 @@ function dolls.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 		fromPosition = player:getPosition()
 	end
 
-	local chance = math.random(#sounds)
-	local sound = sounds[chance]
-	if item.itemid == 5668 then
+	local random = math.random(#sounds)
+	local sound = sounds[random]
+	if item.itemid == 6566 then
+		if random == 3 then
+			fromPosition:sendMagicEffect(CONST_ME_POFF)
+		elseif random == 4 then
+			fromPosition:sendMagicEffect(CONST_ME_FIREAREA)
+		elseif random == 5 then
+			doTargetCombatHealth(0, player, COMBAT_PHYSICALDAMAGE, -1, -1, CONST_ME_EXPLOSIONHIT)
+		end
+	elseif item.itemid == 5668 then
 		fromPosition:sendMagicEffect(CONST_ME_MAGIC_RED)
 		item:transform(item.itemid + 1)
 		item:decay()
 	elseif item.itemid == 6387 then
 		fromPosition:sendMagicEffect(CONST_ME_SOUND_YELLOW)
-	elseif item.itemid == 6566 then
-		if chance == 3 then
-			fromPosition:sendMagicEffect(CONST_ME_POFF)
-		elseif chance == 4 then
-			fromPosition:sendMagicEffect(CONST_ME_FIREAREA)
-		elseif chance == 5 then
-			player:sendMagicEffect(CONST_ME_EXPLOSIONHIT)
-			player:addHealth(-1)
-		end
-	elseif item.itemid == 9144 then
-		item:transform(item.itemid + 1)
-		item:decay()
-	elseif item.itemid == 12904 then
-		item:transform(12905)
-		item:decay()
-	elseif item.itemid == 14764 then
-		item:transform(item.itemid + 1)
-		item:decay()
-	elseif item.itemid == 21435 then
-		item:transform(item.itemid + 1)
-		item:decay()
-	elseif item.itemid == 22120 then
-		item:transform(item.itemid + 1)
-		item:decay()
 	end
 
 	sound = sound:gsub('|PLAYERNAME|', player:getName())
@@ -153,8 +93,8 @@ function dolls.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	return true
 end
 
-for index, value in pairs(dollsTable) do
-	dolls:id(index)
+for index, value in pairs(dolls) do
+	doll:id(index)
 end
 
-dolls:register()
+doll:register()

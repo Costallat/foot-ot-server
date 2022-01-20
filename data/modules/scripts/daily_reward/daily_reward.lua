@@ -62,11 +62,11 @@ local DAILY_REWARD_STATUS_FREE = 0
 local DAILY_REWARD_STATUS_PREMIUM = 1
 
 local DailyRewardItems = {
-	[0] = {7618, 7620}, -- God/no vocation character
-	[VOCATION.BASE_ID.PALADIN] = {7618, 7588, 7620, 7589, 8472, 26030, 2316, 2274, 2291, 2266, 2310, 2262, 2277, 2313, 2305, 2301, 2303, 2302, 2304, 2271, 2265, 2293, 2286, 2289, 2308, 2288, 2268, 2315},
-	[VOCATION.BASE_ID.DRUID] = {7618, 7620, 7589, 7590, 26029, 2316, 2274, 2291, 2266, 2310, 2262, 2277, 2313, 2305, 2301, 2303, 2302, 2269, 2304, 2271, 2265, 2293, 2286, 2289, 2308, 2288, 2268, 2315},
-	[VOCATION.BASE_ID.SORCERER] = {7618, 7620, 7589, 7590, 26029, 2316, 2274, 2291, 2266, 2310, 2262, 2277, 2313, 2305, 2301, 2303, 2302, 2304, 2271, 2265, 2293, 2286, 2289, 2308, 2288, 2268, 2315},
-	[VOCATION.BASE_ID.KNIGHT] = {7618, 7588, 7591, 8473, 26031, 7620, 2316, 2274, 2291, 2266, 2310, 2262, 2277, 2313, 2305, 2301, 2303, 2302, 2304, 2271, 2265, 2293, 2286, 2289, 2308, 2288, 2268, 2315},
+	[0] = {266, 268}, -- God/no vocation character
+	[VOCATION.BASE_ID.PALADIN] = {266, 236, 268, 237, 7642, 23374, 3203, 3161, 3178, 3153, 3197, 3149, 3164, 3200, 3192, 3188, 3190, 3189, 3191, 3158, 3152, 3180, 3173, 3176, 3195, 3175, 3155, 3202},
+	[VOCATION.BASE_ID.DRUID] = {266, 268, 237, 238, 23373, 3203, 3161, 3178, 3153, 3197, 3149, 3164, 3200, 3192, 3188, 3190, 3189, 3156, 3191, 3158, 3152, 3180, 3173, 3176, 3195, 3175, 3155, 3202},
+	[VOCATION.BASE_ID.SORCERER] = {266, 268, 237, 238, 23373, 3203, 3161, 3178, 3153, 3197, 3149, 3164, 3200, 3192, 3188, 3190, 3189, 3191, 3158, 3152, 3180, 3173, 3176, 3195, 3175, 3155, 3202},
+	[VOCATION.BASE_ID.KNIGHT] = {266, 236, 239, 7643, 23375, 268, 3203, 3161, 3178, 3153, 3197, 3149, 3164, 3200, 3192, 3188, 3190, 3189, 3191, 3158, 3152, 3180, 3173, 3176, 3195, 3175, 3155, 3202},
 }
 
 DailyReward = {
@@ -76,7 +76,7 @@ DailyReward = {
 	storages = {
 		-- Player
 		currentDayStreak = 14897,
-		currentStreakLevel = 14898, -- Cpp uses the same storage value on const.hpp (STORAGEVALUE_DAILYREWARD)
+		currentStreakLevel = 14898, -- Cpp uses the same storage value on const.h (STORAGEVALUE_DAILYREWARD)
 		nextRewardTime = 14899,
 		collectionTokens = 14901,
 		staminaBonus = 14902,
@@ -134,7 +134,7 @@ DailyReward = {
 		[6] = {
 			type = DAILY_REWARD_TYPE_ITEM,
 			systemType = DAILY_REWARD_SYSTEM_TYPE_ONE,
-			items = {32124, 32125, 32126, 32127, 32128, 32129},
+			items = {28540, 28541, 28542, 28543, 28544, 28545},
 			freeAccount = 1,
 			premiumAccount = 2,
 			itemCharges = 50
@@ -221,9 +221,9 @@ DailyReward.retrieveHistoryEntries = function(playerId)
 	if resultId ~= false then
 		repeat
 			local entry = {
-				description = result.getString(resultId, "description"),
-				timestamp = result.getNumber(resultId, "timestamp"),
-				daystreak = result.getNumber(resultId, "daystreak"),
+				description = result.getDataString(resultId, "description"),
+				timestamp = result.getDataInt(resultId, "timestamp"),
+				daystreak = result.getDataInt(resultId, "daystreak"),
 			}
 			table.insert(entries, entry)
 		until not result.next(resultId)

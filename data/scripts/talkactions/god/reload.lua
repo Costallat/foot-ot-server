@@ -1,16 +1,14 @@
 local reloadTypes = {
 	["all"] = RELOAD_TYPE_ALL,
 
-	["chat"] = RELOAD_TYPE_CHAT,
 	["channel"] = RELOAD_TYPE_CHAT,
+	["chat"] = RELOAD_TYPE_CHAT,
 	["chatchannels"] = RELOAD_TYPE_CHAT,
 
 	["config"] = RELOAD_TYPE_CONFIG,
 	["configuration"] = RELOAD_TYPE_CONFIG,
 
 	["events"] = RELOAD_TYPE_EVENTS,
-
-	["global"] = RELOAD_TYPE_GLOBAL,
 
 	["items"] = RELOAD_TYPE_ITEMS,
 
@@ -29,7 +27,15 @@ local reloadTypes = {
 	["raid"] = RELOAD_TYPE_RAIDS,
 	["raids"] = RELOAD_TYPE_RAIDS,
 
+	["rate"] = RELOAD_TYPE_STAGES,
+	["rates"] = RELOAD_TYPE_STAGES,
+
 	["scripts"] = RELOAD_TYPE_SCRIPTS,
+
+	["stage"] = RELOAD_TYPE_STAGES,
+	["stages"] = RELOAD_TYPE_STAGES,
+
+	["global"] = RELOAD_TYPE_GLOBAL,
 	["libs"] = RELOAD_TYPE_GLOBAL
 }
 
@@ -50,12 +56,12 @@ function reload.onSay(player, words, param)
 	local reloadType = reloadTypes[param:lower()]
 	if reloadType then
 		Game.reload(reloadType)
-		player:sendTextMessage(MESSAGE_LOOK, string.format("Reloaded %s.", param:lower()))
-		Spdlog.info("Reloaded " .. param:lower() .. "")
+		player:sendTextMessage(MESSAGE_ADMINISTRADOR, string.format("Reloaded %s.", param:lower()))
+		Spdlog.info("Reloaded " .. param:lower())
 		return true
 	elseif not reloadType then
 		player:sendCancelMessage("Reload type not found.")
-		Spdlog.info("Reload type not found")
+		Spdlog.warn("[reload.onSay] - Reload type '".. param.. "' not found")
 		return false
 	end
 	return false

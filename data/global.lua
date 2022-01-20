@@ -5,15 +5,6 @@ NOT_MOVEABLE_ACTION = 100
 PARTY_PROTECTION = 1 -- Set to 0 to disable.
 ADVANCED_SECURE_MODE = 1 -- Set to 0 to disable.
 
-NORTH = DIRECTION_NORTH
-EAST = DIRECTION_EAST
-SOUTH = DIRECTION_SOUTH
-WEST = DIRECTION_WEST
-SOUTHWEST = DIRECTION_SOUTHWEST
-SOUTHEAST = DIRECTION_SOUTHEAST
-NORTHWEST = DIRECTION_NORTHWEST
-NORTHEAST = DIRECTION_NORTHEAST
-
 STORAGEVALUE_PROMOTION = 30018
 
 SERVER_NAME = configManager.getString(configKeys.SERVER_NAME)
@@ -24,11 +15,11 @@ GLOBAL_CHARM_SCAVENGE = 0
 
 --WEATHER
 weatherConfig = {
-    groundEffect = CONST_ME_LOSEENERGY,
+	groundEffect = CONST_ME_LOSEENERGY,
 	fallEffect = CONST_ANI_SMALLICE,
-    thunderEffect = configManager.getBoolean(configKeys.WEATHER_THUNDER),
-    minDMG = 1,
-    maxDMG = 5
+	thunderEffect = configManager.getBoolean(configKeys.WEATHER_THUNDER),
+	minDMG = 1,
+	maxDMG = 5
 }
 
 -- Event Schedule
@@ -41,34 +32,60 @@ PROPOSED_STATUS = 1
 MARRIED_STATUS = 2
 PROPACCEPT_STATUS = 3
 LOOK_MARRIAGE_DESCR = TRUE
-ITEM_WEDDING_RING = 2121
-ITEM_ENGRAVED_WEDDING_RING = 10502
+ITEM_WEDDING_RING = 3004
+ITEM_ENGRAVED_WEDDING_RING = 9585
 
 -- Scarlett Etzel
 SCARLETT_MAY_TRANSFORM = 0
 SCARLETT_MAY_DIE = 0
 
-ropeSpots = {386, 421, 7762, 12202, 12936, 14238, 17238, 21501, 21965, 21966, 21967, 21968, 23363, 24358}
-specialRopeSpots = {12935}
+ropeSpots = {386, 421, 386, 7762, 12202, 12936, 14238, 17238, 23363, 21965, 21966, 21967, 21968}
+specialRopeSpots = { 12935 }
 
 -- Impact Analyser
 -- Every 2 seconds
 updateInterval = 2
 -- Healing
 -- Global table to insert data
-if healingImpact == nil then
-	healingImpact = {}
-end
+healingImpact = {}
 -- Damage
 -- Global table to insert data
-if damageImpact == nil then
-	damageImpact = {}
-end
+damageImpact = {}
 
 -- New prey => preyTimeLeft
-if nextPreyTime == nil then
-	nextPreyTime = {}
-end
+nextPreyTime = {}
+
+startupGlobalStorages = {
+	GlobalStorage.TheAncientTombs.AshmunrahSwitchesGlobalStorage,
+	GlobalStorage.TheAncientTombs.DiprathSwitchesGlobalStorage,
+	GlobalStorage.TheAncientTombs.ThalasSwitchesGlobalStorage,
+	GlobalStorage.HeroRathleton.FirstMachines,
+	GlobalStorage.HeroRathleton.SecondMachines,
+	GlobalStorage.HeroRathleton.ThirdMachines,
+	GlobalStorage.HeroRathleton.DeepRunning,
+	GlobalStorage.HeroRathleton.HorrorRunning,
+	GlobalStorage.HeroRathleton.LavaRunning,
+	GlobalStorage.HeroRathleton.MaxxenRunning,
+	GlobalStorage.HeroRathleton.LavaCounter,
+	GlobalStorage.HeroRathleton.FourthMachines,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal1,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal2,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal3,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal4,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal5,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal6,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal7,
+	GlobalStorage.FerumbrasAscendant.Crystals.Crystal8,
+	GlobalStorage.FerumbrasAscendant.Crystals.AllCrystals,
+	GlobalStorage.FerumbrasAscendant.FerumbrasEssence,
+	GlobalStorage.Feroxa.Active,
+	GlobalStorage.FerumbrasAscendant.Habitats.AllHabitats,
+	GlobalStorage.FerumbrasAscendant.Elements.Active,
+	GlobalStorage.FerumbrasAscendant.Elements.First,
+	GlobalStorage.FerumbrasAscendant.Elements.Second,
+	GlobalStorage.FerumbrasAscendant.Elements.Third,
+	GlobalStorage.FerumbrasAscendant.Elements.Done
+}
 
 do -- Event Schedule rates
 	local lootRate = Game.getEventSLoot()
@@ -142,22 +159,6 @@ if not playerDelayPotion then
 	playerDelayPotion = {}
 end
 
--- this is a fix for lua52 or higher which has the function renamed to table.unpack, while luajit still uses unpack
-if unpack == nil then
-	unpack = table.unpack
-end
-
-SAVE_INTERVAL_TYPE = configManager.getString(configKeys.SAVE_INTERVAL_TYPE)
-SAVE_INTERVAL_CONFIG_TIME = configManager.getNumber(configKeys.SAVE_INTERVAL_TIME)
-SAVE_INTERVAL_TIME = 0
-if SAVE_INTERVAL_TYPE == "second" then
-	SAVE_INTERVAL_TIME = 1000
-elseif SAVE_INTERVAL_TYPE == "minute" then
-	SAVE_INTERVAL_TIME = 60 * 1000
-elseif SAVE_INTERVAL_TYPE == "hour" then
-	SAVE_INTERVAL_TIME = 60 * 60 * 1000
-end
-
 -- Increase Stamina when Attacking Trainer
 staminaBonus = {
 	target = 'Training Machine',
@@ -165,13 +166,6 @@ staminaBonus = {
 	bonus = configManager.getNumber(configKeys.STAMINA_TRAINER_GAIN), -- gain stamina trainers
 	eventsTrainer = {}, -- stamina in trainers
 	eventsPz = {} -- stamina in Pz
-}
-
-FAMILIARSNAME = {
-	"sorcerer familiar",
-	"knight familiar",
-	"druid familiar",
-	"paladin familiar"
 }
 
 function addStamina(playerId, ...)
@@ -232,3 +226,6 @@ function addStamina(playerId, ...)
 	end
 	return false
 end
+
+-- Exercise Training
+onExerciseTraining = {}

@@ -1,4 +1,3 @@
--- Use: /addmoney playername, moneycount
 local addMoney = TalkAction("/addmoney")
 
 function addMoney.onSay(player, words, param)

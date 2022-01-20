@@ -1,5 +1,4 @@
 local doorIds = {}
-
 for index, value in ipairs(LevelDoorTable) do
 	if not table.contains(doorIds, value.openDoor) then
 		table.insert(doorIds, value.openDoor)
@@ -11,10 +10,9 @@ for index, value in ipairs(LevelDoorTable) do
 end
 
 local levelDoor = Action()
-
 function levelDoor.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	for index, value in ipairs(LevelDoorTable) do
-		if value.closedDoor == item.itemid then
+		 if value.closedDoor == item.itemid then
 			if item.actionid > 0 and player:getLevel() >= item.actionid - 1000 then
 				item:transform(value.openDoor)
 				player:teleportTo(toPosition, true)
@@ -26,7 +24,7 @@ function levelDoor.onUse(player, item, fromPosition, target, toPosition, isHotke
 		end
 	end
 
-	if Creature.isInsideDoor(player, toPosition) then
+	if Creature.checkCreatureInsideDoor(player, toPosition) then
 		return true
 	end
 	return true

@@ -2,11 +2,13 @@ local piggyBank = Action()
 
 function piggyBank.onUse(player, item, fromPosition, target, toPosition, isHotkey)
 	if math.random(6) == 1 then
-		item:getPosition():sendMagicEffect(CONST_ME_POFF)
-		player:addItem(ITEM_GOLD_COIN, 1)
+		fromPosition:sendMagicEffect(CONST_ME_POFF)
 		item:transform(2996)
+
+		player:addItem(ITEM_GOLD_COIN, 1)
+		player:addAchievementProgress('Allowance Collector', 50)
 	else
-		item:getPosition():sendMagicEffect(CONST_ME_SOUND_YELLOW)
+		fromPosition:sendMagicEffect(CONST_ME_SOUND_YELLOW)
 		player:addItem(ITEM_PLATINUM_COIN, 1)
 	end
 	return true
