@@ -106,6 +106,19 @@ if [ -d "/shared" ]; then
 	echo ""
 fi
 
+if [ -f "data/world/world.zip" ]; then
+	echo ""
+	echo "===== Unzip World Map ====="
+	echo ""
+
+	unzip data/world/world.zip
+	mv otservbr.otbm data/world/
+
+	echo ""
+	echo "================================"
+	echo ""
+fi
+
 echo ""
 echo "===== Start Server ====="
 echo ""
