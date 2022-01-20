@@ -114,8 +114,8 @@ pushWhenAttacking = false
 -- Map
 -- NOTE: set mapName WITHOUT .otbm at the end
 -- NOTE: unzip the map world.rar
-mapName = "canary"
-mapAuthor = "Eduardo Dantas"
+mapName = "otservbr"
+mapAuthor = "OTServBR"
 
 -- Party List limitations
 -- max distance in which players in party list are visible
@@ -123,10 +123,10 @@ mapAuthor = "Eduardo Dantas"
 partyListMaxDistance = 30
 
 -- Custom Map
--- NOTE: mapCustomEnabled: true = activate the map, false = disable the map
-toggleMapCustom = false
-mapCustomName = "canary-custom"
-mapCustomAuthor = "OpenTibiaBR"
+-- NOTE: toggleMapCustom: true = activate the map, false = disable the map
+toggleMapCustom = true
+mapCustomName = "otservbr-custom"
+mapCustomAuthor = "OTServBR"
 
 -- Market
 marketOfferDuration = 30 * 24 * 60 * 60
