@@ -3887,7 +3887,7 @@ void ProtocolGame::sendShop(Npc *npc)
 	msg.addByte(0x7A);
 	msg.addString(npc->getName());
 	if (version >= 1200) {
-		msg.add<uint16_t>(npc->getCurrencyTrading());
+		msg.add<uint16_t>(npc->getCurrency());
 		msg.addString(std::string()); // ??
 	}
 
